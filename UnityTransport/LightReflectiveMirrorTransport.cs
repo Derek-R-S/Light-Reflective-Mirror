@@ -12,7 +12,7 @@ namespace LightReflectiveMirror
     {
         [Header("Connection Variables")]
         public Transport clientToServerTransport;
-        public string serverIP;
+        public string serverIP = "34.67.125.123";
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
@@ -168,29 +168,40 @@ namespace LightReflectiveMirror
             if (_isServer)
             {
                 int pos = 0;
+
+                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.UpdateRoomData);
+
                 if (!string.IsNullOrEmpty(newServerName))
                 {
                     _clientSendBuffer.WriteBool(ref pos, true);
-                    _clientSendBuffer.WriteString(ref pos,newServerName);
+                    _clientSendBuffer.WriteString(ref pos, newServerName);
                 }
+                else
+                    _clientSendBuffer.WriteBool(ref pos, false);
 
                 if (!string.IsNullOrEmpty(newServerData))
                 {
                     _clientSendBuffer.WriteBool(ref pos, true);
                     _clientSendBuffer.WriteString(ref pos, newServerData);
                 }
+                else
+                    _clientSendBuffer.WriteBool(ref pos, false);
 
                 if (newServerIsPublic != null)
                 {
                     _clientSendBuffer.WriteBool(ref pos, true);
                     _clientSendBuffer.WriteBool(ref pos, newServerIsPublic.Value);
                 }
+                else
+                    _clientSendBuffer.WriteBool(ref pos, false);
 
                 if (newPlayerCap != null)
                 {
                     _clientSendBuffer.WriteBool(ref pos, true);
                     _clientSendBuffer.WriteInt(ref pos, newPlayerCap.Value);
                 }
+                else
+                    _clientSendBuffer.WriteBool(ref pos, false);
 
                 clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
             }

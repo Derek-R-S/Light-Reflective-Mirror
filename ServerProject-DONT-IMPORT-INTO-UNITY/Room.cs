@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LightReflectiveMirror
 {
-    struct Room
+    class Room
     {
         public int hostId;
         public string serverName;

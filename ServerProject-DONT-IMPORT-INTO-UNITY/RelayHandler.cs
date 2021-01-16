@@ -78,11 +78,10 @@ namespace LightReflectiveMirror
                         SendServerList(clientId);
                         break;
                     case OpCodes.UpdateRoomData:
-                        var room = GetRoomForPlayer(clientId);
-                        if (room == null)
-                            return;
+                        var plyRoom = GetRoomForPlayer(clientId);
 
-                        var plyRoom = room.Value;
+                        if (plyRoom == null)
+                            return;
 
                         bool newName = data.ReadBool(ref pos);
                         if (newName)
@@ -99,7 +98,7 @@ namespace LightReflectiveMirror
                         bool newPlayerCap = data.ReadBool(ref pos);
                         if (newPlayerCap)
                             plyRoom.maxPlayers = data.ReadInt(ref pos);
-                        
+
                         break;
                 }
             }
@@ -138,11 +137,11 @@ namespace LightReflectiveMirror
 
         void ProcessData(int clientId, byte[] clientData, int channel, int sendTo = -1)
         {
-            Room? playersRoom = GetRoomForPlayer(clientId);
+            Room playersRoom = GetRoomForPlayer(clientId);
 
             if(playersRoom != null)
             {
-                Room room = playersRoom.Value;
+                Room room = playersRoom;
 
                 if(room.hostId == clientId)
                 {
@@ -174,7 +173,7 @@ namespace LightReflectiveMirror
             }
         }
 
-        Room? GetRoomForPlayer(int clientId)
+        Room GetRoomForPlayer(int clientId)
         {
             for(int i = 0; i < rooms.Count; i++)
             {

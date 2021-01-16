@@ -67,11 +67,11 @@ UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat
 
 ## Example
 
-No Example yet!
+Maqsoom's Server List Example - https://github.com/maqsoom/LightReflectiveMirror-Example
 
 ## Credits
 
-Maqsoom & JesusLuvsYooh - Both really active testers and have been testing it since I pitched the idea. They tested almost all versions of DRM and I assume they will test the crap out of LRM!
+Maqsoom & JesusLuvsYooh - Both really active testers and have been testing it since I pitched the idea. They tested almost all versions of DRM and I am sure they will test the crap out of LRM!
 
 All Mirror Transport Creators! - They made all the transports that this thing relies on! Especially the Simple Web Transport by default!
 
