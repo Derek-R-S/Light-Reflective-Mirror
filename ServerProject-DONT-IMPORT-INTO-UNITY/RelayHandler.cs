@@ -33,7 +33,7 @@ namespace LightReflectiveMirror
             try
             {
                 var data = segmentData.Array;
-                int pos = 0;
+                int pos = segmentData.Offset;
 
                 OpCodes opcode = (OpCodes)data.ReadByte(ref pos);
 
