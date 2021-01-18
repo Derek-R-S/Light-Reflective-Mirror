@@ -54,15 +54,20 @@ And all you need to do is run LRM.exe on windows, or "dotnet LRM.dll" on linux!
 #### Server Config
 In the config.json file there are a few fields.
 
-TransportDLL - This is the name of the dll of the compiled transport.
+TransportDLL - This is the name of the dll of the compiled transport dll.
 
 TransportClass - The class name of the transport inside the DLL, Including namespaces!
+By default, there are 3 compiled transports in the MultiCompiled dll.
+To switch between them you have the following options:
+* Mirror.LiteNetLibTransport
+* Mirror.TelepathyTransport
+* Mirror.SimpleWebTransport
 
 AuthenticationKey - This is the key the clients need to have on their inspector. It cannot be blank.
 
 UpdateLoopTime - The time in miliseconds between calling 'Update' on the transport
 
-UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat. By default its 20, which if updateLoopTime is 50, means every (50 * 20 = 1000ms) it will send out a heartbeat.
+UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat. By default its 100, which if updateLoopTime is 10, means every (10 * 100 = 1000ms) it will send out a heartbeat.
 
 
 ## Example
