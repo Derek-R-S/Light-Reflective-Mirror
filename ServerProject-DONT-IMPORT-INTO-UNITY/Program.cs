@@ -119,6 +119,8 @@ namespace LightReflectiveMirror
                     {
                         transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(new byte[] { 200 }));
                     }
+
+                    GC.Collect();
                 }
 
                 await Task.Delay(conf.UpdateLoopTime);

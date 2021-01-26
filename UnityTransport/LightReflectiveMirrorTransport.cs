@@ -16,6 +16,7 @@ namespace LightReflectiveMirror
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
+        public UnityEvent diconnectedFromRelay;
         [Header("Server Hosting Data")]
         public string serverName = "My awesome server!";
         public string extraServerData = "Map 1";
@@ -49,12 +50,19 @@ namespace LightReflectiveMirror
             InvokeRepeating(nameof(SendHeartbeat), heartBeatInterval, heartBeatInterval);
         }
 
+        private void OnEnable()
+        {
+            clientToServerTransport.OnClientConnected = ConnectedToRelay;
+            clientToServerTransport.OnClientDataReceived = DataReceived;
+            clientToServerTransport.OnClientDisconnected = Disconnected;
+        }
+
+        void Disconnected() => diconnectedFromRelay?.Invoke();
+
         public void ConnectToRelay()
         {
             if (!_connectedToRelay)
             {
-                clientToServerTransport.OnClientConnected = ConnectedToRelay;
-                clientToServerTransport.OnClientDataReceived = DataReceived;
                 _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
 
                 clientToServerTransport.ClientConnect(serverIP);
