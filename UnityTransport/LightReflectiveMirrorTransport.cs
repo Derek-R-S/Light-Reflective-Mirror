@@ -1,6 +1,5 @@
 ﻿using Mirror;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -16,7 +15,7 @@ namespace LightReflectiveMirror
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
-        public UnityEvent diconnectedFromRelay;
+        public UnityEvent disconnectedFromRelay;
         [Header("Server Hosting Data")]
         public string serverName = "My awesome server!";
         public string extraServerData = "Map 1";
@@ -63,8 +62,17 @@ namespace LightReflectiveMirror
             clientToServerTransport.OnClientDataReceived = DataReceived;
             clientToServerTransport.OnClientDisconnected = Disconnected;
         }
+        
+        public bool IsConnectedToRelay()
+        {
+            return _connectedToRelay;
+        }
 
-        void Disconnected() => diconnectedFromRelay?.Invoke();
+        void Disconnected()
+        {
+            _connectedToRelay = false;
+            disconnectedFromRelay?.Invoke();
+        }
 
         public void ConnectToRelay()
         {
@@ -93,7 +101,7 @@ namespace LightReflectiveMirror
 
         public void RequestServerList()
         {
-            if (_isAuthenticated)
+            if (_isAuthenticated && _connectedToRelay)
             {
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.RequestServers);
