@@ -43,9 +43,6 @@ Light Reflective Mirror has a built in room/server list if you would like to use
 
 To request the server list you need a reference to the LightReflectiveMirrorTransport from your script and call 'RequestServerList()'. This will invoke a request to the server to update our server list. Once the response is recieved the field 'relayServerList' will be populated and you can get all the servers from there.
  
-#### Free Relay
-Note: If you would like to test without creating a server, feel free to use my test server with IP: 34.67.125.123. Which is in there by default  :)
-
 #### Server Setup
 Download the latest Server release from: [Releases](https://github.com/Derek-R-S/Light-Reflective-Mirror/releases)
 Make sure you have .NET Core 3.1

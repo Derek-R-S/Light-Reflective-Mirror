@@ -34,6 +34,7 @@ namespace LightReflectiveMirror
         private bool _isServer = false;
         private bool _isAuthenticated = false;
         private int _currentMemberId;
+        private bool _callbacksInitialized = false;
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
         public bool IsAuthenticated() => _isAuthenticated;
 
@@ -44,14 +45,20 @@ namespace LightReflectiveMirror
                 throw new Exception("Haha real funny... Use a different transport.");
             }
 
+            SetupCallbacks();
+
             if (connectOnAwake)
                 ConnectToRelay();
 
             InvokeRepeating(nameof(SendHeartbeat), heartBeatInterval, heartBeatInterval);
         }
 
-        private void OnEnable()
+        private void SetupCallbacks()
         {
+            if (_callbacksInitialized)
+                return;
+
+            _callbacksInitialized = true;
             clientToServerTransport.OnClientConnected = ConnectedToRelay;
             clientToServerTransport.OnClientDataReceived = DataReceived;
             clientToServerTransport.OnClientDisconnected = Disconnected;
