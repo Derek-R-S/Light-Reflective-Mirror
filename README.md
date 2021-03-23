@@ -54,10 +54,11 @@ In the config.json file there are a few fields.
 TransportDLL - This is the name of the dll of the compiled transport dll.
 
 TransportClass - The class name of the transport inside the DLL, Including namespaces!
-By default, there are 4 compiled transports in the MultiCompiled dll.
+By default, there are 5 compiled transports in the MultiCompiled dll.
 To switch between them you have the following options:
 * Mirror.LiteNetLibTransport
 * Mirror.TelepathyTransport
+* kcp2k.KcpTransport
 * Mirror.SimpleWebTransport
 * Mirror.MultiplexTransport
 

@@ -8,6 +8,7 @@ using UnityEngine.Events;
 
 namespace LightReflectiveMirror
 {
+    [DefaultExecutionOrder(1001)]
     public class LightReflectiveMirrorTransport : Transport
     {
         [Header("Connection Variables")]
@@ -62,6 +63,16 @@ namespace LightReflectiveMirror
             clientToServerTransport.OnClientConnected = ConnectedToRelay;
             clientToServerTransport.OnClientDataReceived = DataReceived;
             clientToServerTransport.OnClientDisconnected = Disconnected;
+        }
+
+        public override void ClientEarlyUpdate()
+        {
+            clientToServerTransport.ClientEarlyUpdate();
+        }
+
+        public override void ClientLateUpdate()
+        {
+            clientToServerTransport.ClientLateUpdate();
         }
 
         void Disconnected() => diconnectedFromRelay?.Invoke();
