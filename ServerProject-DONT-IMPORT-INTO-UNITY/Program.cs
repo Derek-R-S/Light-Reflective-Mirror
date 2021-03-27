@@ -10,13 +10,15 @@ namespace LightReflectiveMirror
 {
     class Program
     {
+        public static Transport transport;
         public static Config conf;
         RelayHandler relay;
-        public static Transport transport;
+
         MethodInfo awakeMethod;
         MethodInfo startMethod;
         MethodInfo updateMethod;
         MethodInfo lateUpdateMethod;
+
         List<int> _currentConnections = new List<int>();
         int _currentHeartbeatTimer = 0;
 
@@ -25,6 +27,7 @@ namespace LightReflectiveMirror
 
         public async Task MainAsync()
         {
+            WriteTitle();
 
             if (!File.Exists("config.json"))
             {
@@ -41,12 +44,15 @@ namespace LightReflectiveMirror
                     Console.WriteLine(Directory.GetCurrentDirectory());
                     var asm = Assembly.LoadFile(Directory.GetCurrentDirectory() + @"\" + conf.TransportDLL);
                     WriteLogMessage($"Loaded Assembly: {asm.FullName}", ConsoleColor.Green);
-                    transport = (Transport)asm.CreateInstance(conf.TransportClass);
+
+                    transport = asm.CreateInstance(conf.TransportClass) as Transport;
 
                     if (transport != null)
                     {
-                        WriteLogMessage($"Loaded Transport: {asm.GetType(conf.TransportClass).Name}! Loading Methods...", ConsoleColor.Green);
-                        CheckMethods(asm.GetType(conf.TransportClass));
+                        var transportClass = asm.GetType(conf.TransportClass);
+
+                        WriteLogMessage($"Loaded Transport: {transportClass.Name}! Loading Methods...", ConsoleColor.Green);
+                        CheckMethods(transportClass);
 
                         if (awakeMethod != null)
                         {
@@ -151,6 +157,27 @@ namespace LightReflectiveMirror
 
             if (lateUpdateMethod != null)
                 WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow);
+        }
+
+        void WriteTitle()
+        {
+            string t = @"  
+                           w  c(..)o   (
+  _       _____   __  __    \__(-)    __)
+ | |     |  __ \ |  \/  |       /\   (
+ | |     | |__) || \  / |      /(_)___)
+ | |     |  _  / | |\/| |      w /|
+ | |____ | | \ \ | |  | |       | \
+ |______||_|  \_\|_|  |_|      m  m copyright monkesoft 2021
+
+";
+
+            string load = $"Chimp Event Listener Initializing... OK" +
+                            "\nHarambe Memorial Initializing... OK" +
+                            "\nBananas initializing... OK\n";
+
+            WriteLogMessage(t, ConsoleColor.Green);
+            WriteLogMessage(load, ConsoleColor.Cyan);
         }
     }
 }

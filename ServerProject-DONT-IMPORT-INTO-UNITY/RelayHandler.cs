@@ -125,7 +125,7 @@ namespace LightReflectiveMirror
                     buffer.WriteBool(ref pos, true);
                     buffer.WriteString(ref pos, rooms[i].serverName);
                     buffer.WriteString(ref pos, rooms[i].serverData);
-                    buffer.WriteInt(ref pos, rooms[i].hostId);
+                    buffer.WriteInt(ref pos, rooms[i].serverId);
                     buffer.WriteInt(ref pos, rooms[i].maxPlayers);
                     buffer.WriteInt(ref pos, rooms[i].clients.Count + 1);
                 }
@@ -193,7 +193,7 @@ namespace LightReflectiveMirror
 
             for(int i = 0; i < rooms.Count; i++)
             {
-                if(rooms[i].hostId == serverId)
+                if(rooms[i].serverId == serverId)
                 {
                     if(rooms[i].clients.Count < rooms[i].maxPlayers)
                     {
@@ -206,7 +206,7 @@ namespace LightReflectiveMirror
                         sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
 
                         Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                        Program.transport.ServerSend(serverId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                        Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
                         sendBuffers.Return(sendJoinBuffer);
                         return;
                     }
@@ -235,6 +235,7 @@ namespace LightReflectiveMirror
             room.serverData = serverData;
             room.clients = new List<int>();
 
+            room.serverId = GetRandomServerID();
             rooms.Add(room);
 
             int pos = 0;
@@ -245,6 +246,28 @@ namespace LightReflectiveMirror
 
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
             sendBuffers.Return(sendBuffer);
+        }
+
+        int GetRandomServerID()
+        {
+            Random rand = new Random();
+            int temp = rand.Next(int.MinValue, int.MaxValue);
+
+            while (DoesServerIdExist(temp))
+                temp = rand.Next(int.MinValue, int.MaxValue);
+
+            return temp;
+        }
+
+        bool DoesServerIdExist(int id)
+        {
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                if (rooms[i].serverId == id)
+                    return true;
+            }
+
+            return false;
         }
 
         void LeaveRoom(int clientId, int requiredHostId = -1)
