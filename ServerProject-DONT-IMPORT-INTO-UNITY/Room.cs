@@ -6,6 +6,7 @@ namespace LightReflectiveMirror
 {
     class Room
     {
+        public int serverId;
         public int hostId;
         public string serverName;
         public string serverData;
