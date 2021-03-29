@@ -37,14 +37,22 @@ namespace LightReflectiveMirror
         private int _currentMemberId;
         private bool _callbacksInitialized = false;
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
+
+        public override bool ClientConnected() => _isClient;
+        private void OnConnectedToRelay() => _connectedToRelay = true;
         public bool IsAuthenticated() => _isAuthenticated;
+        public override bool ServerActive() => _isServer;
+        public override bool Available() => _connectedToRelay;
+        public override void ClientEarlyUpdate() => clientToServerTransport.ClientEarlyUpdate();
+        public override void ClientLateUpdate() => clientToServerTransport.ClientLateUpdate();
+        public override void ClientConnect(Uri uri) => ClientConnect(uri.Host);
+        public override int GetMaxPacketSize(int channelId = 0) => clientToServerTransport.GetMaxPacketSize(channelId);
+        public override string ServerGetClientAddress(int connectionId) => _connectedRelayClients.GetBySecond(connectionId).ToString();
 
         private void Awake()
         {
             if (clientToServerTransport is LightReflectiveMirrorTransport)
-            {
                 throw new Exception("Haha real funny... Use a different transport.");
-            }
 
             SetupCallbacks();
 
@@ -60,22 +68,17 @@ namespace LightReflectiveMirror
                 return;
 
             _callbacksInitialized = true;
-            clientToServerTransport.OnClientConnected = ConnectedToRelay;
+            clientToServerTransport.OnClientConnected = OnConnectedToRelay;
             clientToServerTransport.OnClientDataReceived = DataReceived;
             clientToServerTransport.OnClientDisconnected = Disconnected;
         }
 
-        public override void ClientEarlyUpdate()
+        void Disconnected()
         {
-            clientToServerTransport.ClientEarlyUpdate();
+            _connectedToRelay = false;
+            _isAuthenticated = false;
+            diconnectedFromRelay?.Invoke();
         }
-
-        public override void ClientLateUpdate()
-        {
-            clientToServerTransport.ClientLateUpdate();
-        }
-
-        void Disconnected() => diconnectedFromRelay?.Invoke();
 
         public void ConnectToRelay()
         {
@@ -84,6 +87,10 @@ namespace LightReflectiveMirror
                 _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
 
                 clientToServerTransport.ClientConnect(serverIP);
+            }
+            else
+            {
+                Debug.Log("Already connected to relay!");
             }
         }
 
@@ -97,18 +104,17 @@ namespace LightReflectiveMirror
             }
         }
 
-        void ConnectedToRelay()
-        {
-            _connectedToRelay = true;
-        }
-
         public void RequestServerList()
         {
-            if (_isAuthenticated)
+            if (_isAuthenticated && _connectedToRelay)
             {
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.RequestServers);
                 clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+            }
+            else
+            {
+                Debug.Log("You must be connected to Relay to request server list!");
             }
         }
 
@@ -171,7 +177,7 @@ namespace LightReflectiveMirror
                         break;
                     case OpCodes.ServerListReponse:
                         relayServerList.Clear();
-                        while(data.ReadBool(ref pos))
+                        while (data.ReadBool(ref pos))
                         {
                             relayServerList.Add(new RelayServerInfo()
                             {
@@ -241,8 +247,6 @@ namespace LightReflectiveMirror
             clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
         }
 
-        public override bool Available() => _connectedToRelay;
-
         public override void ClientConnect(string address)
         {
             int hostId = 0;
@@ -254,9 +258,7 @@ namespace LightReflectiveMirror
             }
 
             if (_isClient || _isServer)
-            {
                 throw new Exception("Cannot connect while hosting/already connected!");
-            }
 
             int pos = 0;
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
@@ -266,13 +268,6 @@ namespace LightReflectiveMirror
 
             clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
         }
-
-        public override void ClientConnect(Uri uri)
-        {
-            ClientConnect(uri.Host);
-        }
-
-        public override bool ClientConnected() => _isClient;
 
         public override void ClientDisconnect()
         {
@@ -294,18 +289,9 @@ namespace LightReflectiveMirror
             clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
         }
 
-        public override int GetMaxPacketSize(int channelId = 0)
-        {
-            return clientToServerTransport.GetMaxPacketSize(channelId);
-        }
-
-        public override bool ServerActive() => _isServer;
-
         public override bool ServerDisconnect(int connectionId)
         {
-            int relayId;
-            
-            if(_connectedRelayClients.TryGetBySecond(connectionId, out relayId))
+            if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
             {
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.KickPlayer);
@@ -314,11 +300,6 @@ namespace LightReflectiveMirror
             }
 
             return false;
-        }
-
-        public override string ServerGetClientAddress(int connectionId)
-        {
-            return _connectedRelayClients.GetBySecond(connectionId).ToString();
         }
 
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
@@ -339,7 +320,7 @@ namespace LightReflectiveMirror
                 return;
             }
 
-            if(_isClient || _isServer)
+            if (_isClient || _isServer)
             {
                 Debug.Log("Cannot host while already hosting or connected!");
                 return;
@@ -373,9 +354,12 @@ namespace LightReflectiveMirror
 
         public override Uri ServerUri()
         {
-            UriBuilder builder = new UriBuilder();
-            builder.Scheme = "LRM";
-            builder.Host = serverId.ToString();
+            UriBuilder builder = new UriBuilder
+            {
+                Scheme = "LRM",
+                Host = serverId.ToString()
+            };
+
             return builder.Uri;
         }
 
@@ -387,7 +371,6 @@ namespace LightReflectiveMirror
             _connectedToRelay = false;
             clientToServerTransport.Shutdown();
         }
-
 
         public enum OpCodes
         {
