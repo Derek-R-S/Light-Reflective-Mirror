@@ -12,15 +12,17 @@ namespace LightReflectiveMirror
     {
         public static Transport transport;
         public static Config conf;
-        RelayHandler relay;
 
-        MethodInfo awakeMethod;
-        MethodInfo startMethod;
-        MethodInfo updateMethod;
-        MethodInfo lateUpdateMethod;
+        private RelayHandler _relay;
+        private MethodInfo _awakeMethod;
+        private MethodInfo _startMethod;
+        private MethodInfo _updateMethod;
+        private MethodInfo _lateUpdateMethod;
 
-        List<int> _currentConnections = new List<int>();
-        int _currentHeartbeatTimer = 0;
+        private List<int> _currentConnections = new List<int>();
+        private int _currentHeartbeatTimer = 0;
+
+        private const string CONFIG_PATH = "config.json";
 
         public static void Main(string[] args)
         => new Program().MainAsync().GetAwaiter().GetResult();
@@ -29,19 +31,18 @@ namespace LightReflectiveMirror
         {
             WriteTitle();
 
-            if (!File.Exists("config.json"))
+            if (!File.Exists(CONFIG_PATH))
             {
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config(), Formatting.Indented));
+                File.WriteAllText(CONFIG_PATH, JsonConvert.SerializeObject(new Config(), Formatting.Indented));
                 WriteLogMessage("A config.json file was generated. Please configure it to the proper settings and re-run!", ConsoleColor.Yellow);
                 Console.ReadKey();
                 Environment.Exit(0);
             }
             else
             {
-                conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
                 try
-                {
-                    Console.WriteLine(Directory.GetCurrentDirectory());
+                { 
                     var asm = Assembly.LoadFile(Directory.GetCurrentDirectory() + @"\" + conf.TransportDLL);
                     WriteLogMessage($"Loaded Assembly: {asm.FullName}", ConsoleColor.Green);
 
@@ -54,21 +55,22 @@ namespace LightReflectiveMirror
                         WriteLogMessage($"Loaded Transport: {transportClass.Name}! Loading Methods...", ConsoleColor.Green);
                         CheckMethods(transportClass);
 
-                        if (awakeMethod != null)
+                        if (_awakeMethod != null)
                         {
-                            awakeMethod.Invoke(transport, null);
+                            _awakeMethod.Invoke(transport, null);
                             WriteLogMessage("Called Awake on transport.", ConsoleColor.Yellow);
                         }
 
-                        if (startMethod != null)
+                        if (_startMethod != null)
                         {
-                            awakeMethod.Invoke(transport, null);
+                            _awakeMethod.Invoke(transport, null);
                             WriteLogMessage("Called Start on transport.", ConsoleColor.Yellow);
                         }
 
                         WriteLogMessage("Starting Transport...", ConsoleColor.Green);
 
-                        transport.OnServerError = (clientID, error) => {
+                        transport.OnServerError = (clientID, error) => 
+                        {
                             WriteLogMessage($"Transport Error, Client: {clientID}, Error: {error}", ConsoleColor.Red);
                         };
 
@@ -76,16 +78,16 @@ namespace LightReflectiveMirror
                         {
                             WriteLogMessage($"Transport Connected, Client: {clientID}", ConsoleColor.Cyan);
                             _currentConnections.Add(clientID);
-                            relay.ClientConnected(clientID);
+                            _relay.ClientConnected(clientID);
                         };
 
-                        relay = new RelayHandler(transport.GetMaxPacketSize(0));
+                        _relay = new RelayHandler(transport.GetMaxPacketSize(0));
 
-                        transport.OnServerDataReceived = relay.HandleMessage;
+                        transport.OnServerDataReceived = _relay.HandleMessage;
                         transport.OnServerDisconnected = (clientID) =>
                         {
                             _currentConnections.Remove(clientID);
-                            relay.HandleDisconnect(clientID);
+                            _relay.HandleDisconnect(clientID);
                         };
 
                         transport.ServerStart();
@@ -109,11 +111,8 @@ namespace LightReflectiveMirror
 
             while (true)
             {
-                if (updateMethod != null)
-                    updateMethod.Invoke(transport, null);
-
-                if (lateUpdateMethod != null)
-                    lateUpdateMethod.Invoke(transport, null);
+                if (_updateMethod != null) _updateMethod.Invoke(transport, null); 
+                if (_lateUpdateMethod != null) _lateUpdateMethod.Invoke(transport, null); 
 
                 _currentHeartbeatTimer++;
 
@@ -122,9 +121,7 @@ namespace LightReflectiveMirror
                     _currentHeartbeatTimer = 0;
 
                     for(int i = 0; i < _currentConnections.Count; i++)
-                    {
                         transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(new byte[] { 200 }));
-                    }
 
                     GC.Collect();
                 }
@@ -141,22 +138,15 @@ namespace LightReflectiveMirror
 
         void CheckMethods(Type type)
         {
-            awakeMethod         = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _awakeMethod         = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-            if (awakeMethod != null)
-                WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow);
-
-            if (startMethod != null)
-                WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow);
-
-            if (updateMethod != null)
-                WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow);
-
-            if (lateUpdateMethod != null)
-                WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow);
+            if (_awakeMethod != null) WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow); 
+            if (_startMethod != null) WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow); 
+            if (_updateMethod != null) WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow);
+            if (_lateUpdateMethod != null) WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow);
         }
 
         void WriteTitle()
