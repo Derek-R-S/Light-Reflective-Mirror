@@ -13,11 +13,11 @@ namespace LightReflectiveMirror
         public static Transport transport;
         public static Config conf;
 
-        private RelayHandler relay;
-        private MethodInfo awakeMethod;
-        private MethodInfo startMethod;
-        private MethodInfo updateMethod;
-        private MethodInfo lateUpdateMethod;
+        private RelayHandler _relay;
+        private MethodInfo _awakeMethod;
+        private MethodInfo _startMethod;
+        private MethodInfo _updateMethod;
+        private MethodInfo _lateUpdateMethod;
 
         private List<int> _currentConnections = new List<int>();
         private int _currentHeartbeatTimer = 0;
@@ -55,15 +55,15 @@ namespace LightReflectiveMirror
                         WriteLogMessage($"Loaded Transport: {transportClass.Name}! Loading Methods...", ConsoleColor.Green);
                         CheckMethods(transportClass);
 
-                        if (awakeMethod != null)
+                        if (_awakeMethod != null)
                         {
-                            awakeMethod.Invoke(transport, null);
+                            _awakeMethod.Invoke(transport, null);
                             WriteLogMessage("Called Awake on transport.", ConsoleColor.Yellow);
                         }
 
-                        if (startMethod != null)
+                        if (_startMethod != null)
                         {
-                            awakeMethod.Invoke(transport, null);
+                            _awakeMethod.Invoke(transport, null);
                             WriteLogMessage("Called Start on transport.", ConsoleColor.Yellow);
                         }
 
@@ -78,16 +78,16 @@ namespace LightReflectiveMirror
                         {
                             WriteLogMessage($"Transport Connected, Client: {clientID}", ConsoleColor.Cyan);
                             _currentConnections.Add(clientID);
-                            relay.ClientConnected(clientID);
+                            _relay.ClientConnected(clientID);
                         };
 
-                        relay = new RelayHandler(transport.GetMaxPacketSize(0));
+                        _relay = new RelayHandler(transport.GetMaxPacketSize(0));
 
-                        transport.OnServerDataReceived = relay.HandleMessage;
+                        transport.OnServerDataReceived = _relay.HandleMessage;
                         transport.OnServerDisconnected = (clientID) =>
                         {
                             _currentConnections.Remove(clientID);
-                            relay.HandleDisconnect(clientID);
+                            _relay.HandleDisconnect(clientID);
                         };
 
                         transport.ServerStart();
@@ -111,8 +111,8 @@ namespace LightReflectiveMirror
 
             while (true)
             {
-                if (updateMethod != null) { updateMethod.Invoke(transport, null); }
-                if (lateUpdateMethod != null) { lateUpdateMethod.Invoke(transport, null); }
+                if (_updateMethod != null) _updateMethod.Invoke(transport, null); 
+                if (_lateUpdateMethod != null) _lateUpdateMethod.Invoke(transport, null); 
 
                 _currentHeartbeatTimer++;
 
@@ -138,15 +138,15 @@ namespace LightReflectiveMirror
 
         void CheckMethods(Type type)
         {
-            awakeMethod         = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _awakeMethod         = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-            if (awakeMethod != null) { WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow); }
-            if (startMethod != null) { WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow); }
-            if (updateMethod != null) { WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow); }
-            if (lateUpdateMethod != null) { WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow); }
+            if (_awakeMethod != null) WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow); 
+            if (_startMethod != null) WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow); 
+            if (_updateMethod != null) WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow);
+            if (_lateUpdateMethod != null) WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow);
         }
 
         void WriteTitle()
