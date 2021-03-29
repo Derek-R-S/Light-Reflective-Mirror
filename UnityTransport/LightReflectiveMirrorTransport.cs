@@ -76,6 +76,7 @@ namespace LightReflectiveMirror
         void Disconnected()
         {
             _connectedToRelay = false;
+            _isAuthenticated = false;
             diconnectedFromRelay?.Invoke();
         }
 
