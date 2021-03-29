@@ -7,25 +7,25 @@ namespace LightReflectiveMirror
 {
     public class RelayHandler
     {
-        List<Room> rooms = new List<Room>();
-        List<int> pendingAuthentication = new List<int>();
-        ArrayPool<byte> sendBuffers;
-        int maxPacketSize = 0;
+        private List<Room> _rooms = new List<Room>();
+        private List<int> _pendingAuthentication = new List<int>();
+        private ArrayPool<byte> _sendBuffers;
+        private int _maxPacketSize = 0;
 
         public RelayHandler(int maxPacketSize)
         {
-            this.maxPacketSize = maxPacketSize;
-            sendBuffers = ArrayPool<byte>.Create(maxPacketSize, 50);
+            this._maxPacketSize = maxPacketSize;
+            _sendBuffers = ArrayPool<byte>.Create(maxPacketSize, 50);
         }
 
         public void ClientConnected(int clientId)
         {
-            pendingAuthentication.Add(clientId);
-            var buffer = sendBuffers.Rent(1);
+            _pendingAuthentication.Add(clientId);
+            var buffer = _sendBuffers.Rent(1);
             int pos = 0;
             buffer.WriteByte(ref pos, (byte)OpCodes.AuthenticationRequest);
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(buffer, 0, pos));
-            sendBuffers.Return(buffer);
+            _sendBuffers.Return(buffer);
         }
 
         public void HandleMessage(int clientId, ArraySegment<byte> segmentData, int channel)
@@ -37,16 +37,16 @@ namespace LightReflectiveMirror
 
                 OpCodes opcode = (OpCodes)data.ReadByte(ref pos);
 
-                if (pendingAuthentication.Contains(clientId))
+                if (_pendingAuthentication.Contains(clientId))
                 {
                     if (opcode == OpCodes.AuthenticationResponse)
                     {
                         string authResponse = data.ReadString(ref pos);
                         if (authResponse == Program.conf.AuthenticationKey)
                         {
-                            pendingAuthentication.Remove(clientId);
+                            _pendingAuthentication.Remove(clientId);
                             int writePos = 0;
-                            var sendBuffer = sendBuffers.Rent(1);
+                            var sendBuffer = _sendBuffers.Rent(1);
                             sendBuffer.WriteByte(ref writePos, (byte)OpCodes.Authenticated);
                             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, writePos));
                         }
@@ -108,31 +108,28 @@ namespace LightReflectiveMirror
             }
         }
 
-        public void HandleDisconnect(int clientId)
-        {
-            LeaveRoom(clientId);
-        }
+        public void HandleDisconnect(int clientId) => LeaveRoom(clientId);
 
         void SendServerList(int clientId)
         {
             int pos = 0;
-            var buffer = sendBuffers.Rent(500);
+            var buffer = _sendBuffers.Rent(500);
             buffer.WriteByte(ref pos, (byte)OpCodes.ServerListReponse);
-            for(int i = 0; i < rooms.Count; i++)
+            for(int i = 0; i < _rooms.Count; i++)
             {
-                if (rooms[i].isPublic)
+                if (_rooms[i].isPublic)
                 {
                     buffer.WriteBool(ref pos, true);
-                    buffer.WriteString(ref pos, rooms[i].serverName);
-                    buffer.WriteString(ref pos, rooms[i].serverData);
-                    buffer.WriteInt(ref pos, rooms[i].serverId);
-                    buffer.WriteInt(ref pos, rooms[i].maxPlayers);
-                    buffer.WriteInt(ref pos, rooms[i].clients.Count + 1);
+                    buffer.WriteString(ref pos, _rooms[i].serverName);
+                    buffer.WriteString(ref pos, _rooms[i].serverData);
+                    buffer.WriteInt(ref pos, _rooms[i].serverId);
+                    buffer.WriteInt(ref pos, _rooms[i].maxPlayers);
+                    buffer.WriteInt(ref pos, _rooms[i].clients.Count + 1);
                 }
             }
             buffer.WriteBool(ref pos, false);
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(buffer, 0, pos));
-            sendBuffers.Return(buffer);
+            _sendBuffers.Return(buffer);
         }
 
         void ProcessData(int clientId, byte[] clientData, int channel, int sendTo = -1)
@@ -148,40 +145,40 @@ namespace LightReflectiveMirror
                     if (room.clients.Contains(sendTo))
                     {
                         int pos = 0;
-                        byte[] sendBuffer = sendBuffers.Rent(maxPacketSize);
+                        byte[] sendBuffer = _sendBuffers.Rent(_maxPacketSize);
 
                         sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetData);
                         sendBuffer.WriteBytes(ref pos, clientData);
 
                         Program.transport.ServerSend(sendTo, channel, new ArraySegment<byte>(sendBuffer, 0, pos));
-                        sendBuffers.Return(sendBuffer);
+                        _sendBuffers.Return(sendBuffer);
                     }
                 }
                 else
                 {
                     // We are not the host, so send the data to the host.
                     int pos = 0;
-                    byte[] sendBuffer = sendBuffers.Rent(maxPacketSize);
+                    byte[] sendBuffer = _sendBuffers.Rent(_maxPacketSize);
 
                     sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetData);
                     sendBuffer.WriteBytes(ref pos, clientData);
                     sendBuffer.WriteInt(ref pos, clientId);
 
                     Program.transport.ServerSend(room.hostId, channel, new ArraySegment<byte>(sendBuffer, 0, pos));
-                    sendBuffers.Return(sendBuffer);
+                    _sendBuffers.Return(sendBuffer);
                 }
             }
         }
 
         Room GetRoomForPlayer(int clientId)
         {
-            for(int i = 0; i < rooms.Count; i++)
+            for(int i = 0; i < _rooms.Count; i++)
             {
-                if (rooms[i].hostId == clientId)
-                    return rooms[i];
+                if (_rooms[i].hostId == clientId)
+                    return _rooms[i];
 
-                if (rooms[i].clients.Contains(clientId))
-                    return rooms[i];
+                if (_rooms[i].clients.Contains(clientId))
+                    return _rooms[i];
             }
 
             return null;
@@ -191,23 +188,23 @@ namespace LightReflectiveMirror
         {
             LeaveRoom(clientId);
 
-            for(int i = 0; i < rooms.Count; i++)
+            for(int i = 0; i < _rooms.Count; i++)
             {
-                if(rooms[i].serverId == serverId)
+                if(_rooms[i].serverId == serverId)
                 {
-                    if(rooms[i].clients.Count < rooms[i].maxPlayers)
+                    if(_rooms[i].clients.Count < _rooms[i].maxPlayers)
                     {
-                        rooms[i].clients.Add(clientId);
+                        _rooms[i].clients.Add(clientId);
 
                         int sendJoinPos = 0;
-                        byte[] sendJoinBuffer = sendBuffers.Rent(5);
+                        byte[] sendJoinBuffer = _sendBuffers.Rent(5);
 
                         sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.ServerJoined);
                         sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
 
                         Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                        Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                        sendBuffers.Return(sendJoinBuffer);
+                        Program.transport.ServerSend(_rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                        _sendBuffers.Return(sendJoinBuffer);
                         return;
                     }
                 }
@@ -215,37 +212,90 @@ namespace LightReflectiveMirror
 
             // If it got to here, then the server was not found, or full. Tell the client.
             int pos = 0;
-            byte[] sendBuffer = sendBuffers.Rent(1);
+            byte[] sendBuffer = _sendBuffers.Rent(1);
 
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.ServerLeft);
 
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
-            sendBuffers.Return(sendBuffer);
+            _sendBuffers.Return(sendBuffer);
         }
 
         void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData)
         {
             LeaveRoom(clientId);
 
-            Room room = new Room();
-            room.hostId = clientId;
-            room.maxPlayers = maxPlayers;
-            room.serverName = serverName;
-            room.isPublic = isPublic;
-            room.serverData = serverData;
-            room.clients = new List<int>();
+            Room room = new Room
+            {
+                hostId = clientId,
+                maxPlayers = maxPlayers,
+                serverName = serverName,
+                isPublic = isPublic,
+                serverData = serverData,
+                clients = new List<int>(),
 
-            room.serverId = GetRandomServerID();
-            rooms.Add(room);
+                serverId = GetRandomServerID()
+            };
+
+            _rooms.Add(room);
 
             int pos = 0;
-            byte[] sendBuffer = sendBuffers.Rent(5);
+            byte[] sendBuffer = _sendBuffers.Rent(5);
 
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.RoomCreated);
             sendBuffer.WriteInt(ref pos, clientId);
 
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
-            sendBuffers.Return(sendBuffer);
+            _sendBuffers.Return(sendBuffer);
+        }
+
+        void LeaveRoom(int clientId, int requiredHostId = -1)
+        {
+            for(int i = 0; i < _rooms.Count; i++)
+            {
+                if(_rooms[i].hostId == clientId)
+                {
+                    int pos = 0;
+                    byte[] sendBuffer = _sendBuffers.Rent(1);
+                    sendBuffer.WriteByte(ref pos, (byte)OpCodes.ServerLeft);
+
+                    for(int x = 0; x < _rooms[i].clients.Count; x++)
+                        Program.transport.ServerSend(_rooms[i].clients[x], 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+
+                    _sendBuffers.Return(sendBuffer);
+                    _rooms[i].clients.Clear();
+                    _rooms.RemoveAt(i);
+                    return;
+                }
+                else
+                {
+                    if (requiredHostId >= 0 && _rooms[i].hostId != requiredHostId)
+                        continue;
+
+                    if(_rooms[i].clients.RemoveAll(x => x == clientId) > 0)
+                    {
+                        int pos = 0;
+                        byte[] sendBuffer = _sendBuffers.Rent(5);
+
+                        sendBuffer.WriteByte(ref pos, (byte)OpCodes.PlayerDisconnected);
+                        sendBuffer.WriteInt(ref pos, clientId);
+
+                        Program.transport.ServerSend(_rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+                        _sendBuffers.Return(sendBuffer);
+                    }
+                }
+            }
+        }
+
+        void SendClientID(int clientId)
+        {
+            int pos = 0;
+            byte[] sendBuffer = _sendBuffers.Rent(5);
+
+            sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetID);
+            sendBuffer.WriteInt(ref pos, clientId);
+
+            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+            _sendBuffers.Return(sendBuffer);
         }
 
         int GetRandomServerID()
@@ -261,63 +311,11 @@ namespace LightReflectiveMirror
 
         bool DoesServerIdExist(int id)
         {
-            for (int i = 0; i < rooms.Count; i++)
-            {
-                if (rooms[i].serverId == id)
+            for (int i = 0; i < _rooms.Count; i++)
+                if (_rooms[i].serverId == id)
                     return true;
-            }
 
             return false;
-        }
-
-        void LeaveRoom(int clientId, int requiredHostId = -1)
-        {
-            for(int i = 0; i < rooms.Count; i++)
-            {
-                if(rooms[i].hostId == clientId)
-                {
-                    int pos = 0;
-                    byte[] sendBuffer = sendBuffers.Rent(1);
-                    sendBuffer.WriteByte(ref pos, (byte)OpCodes.ServerLeft);
-
-                    for(int x = 0; x < rooms[i].clients.Count; x++)
-                        Program.transport.ServerSend(rooms[i].clients[x], 0, new ArraySegment<byte>(sendBuffer, 0, pos));
-
-                    sendBuffers.Return(sendBuffer);
-                    rooms[i].clients.Clear();
-                    rooms.RemoveAt(i);
-                    return;
-                }
-                else
-                {
-                    if (requiredHostId >= 0 && rooms[i].hostId != requiredHostId)
-                        continue;
-
-                    if(rooms[i].clients.RemoveAll(x => x == clientId) > 0)
-                    {
-                        int pos = 0;
-                        byte[] sendBuffer = sendBuffers.Rent(5);
-
-                        sendBuffer.WriteByte(ref pos, (byte)OpCodes.PlayerDisconnected);
-                        sendBuffer.WriteInt(ref pos, clientId);
-
-                        Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
-                        sendBuffers.Return(sendBuffer);
-                    }
-                }
-            }
-        }
-
-        void SendClientID(int clientId)
-        {
-            int pos = 0;
-            byte[] sendBuffer = sendBuffers.Rent(5);
-
-            sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetID);
-            sendBuffer.WriteInt(ref pos, clientId);
-
-            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
-            sendBuffers.Return(sendBuffer);
         }
     }
 

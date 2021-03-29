@@ -12,15 +12,17 @@ namespace LightReflectiveMirror
     {
         public static Transport transport;
         public static Config conf;
-        RelayHandler relay;
 
-        MethodInfo awakeMethod;
-        MethodInfo startMethod;
-        MethodInfo updateMethod;
-        MethodInfo lateUpdateMethod;
+        private RelayHandler relay;
+        private MethodInfo awakeMethod;
+        private MethodInfo startMethod;
+        private MethodInfo updateMethod;
+        private MethodInfo lateUpdateMethod;
 
-        List<int> _currentConnections = new List<int>();
-        int _currentHeartbeatTimer = 0;
+        private List<int> _currentConnections = new List<int>();
+        private int _currentHeartbeatTimer = 0;
+
+        private const string CONFIG_PATH = "config.json";
 
         public static void Main(string[] args)
         => new Program().MainAsync().GetAwaiter().GetResult();
@@ -29,19 +31,18 @@ namespace LightReflectiveMirror
         {
             WriteTitle();
 
-            if (!File.Exists("config.json"))
+            if (!File.Exists(CONFIG_PATH))
             {
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(new Config(), Formatting.Indented));
+                File.WriteAllText(CONFIG_PATH, JsonConvert.SerializeObject(new Config(), Formatting.Indented));
                 WriteLogMessage("A config.json file was generated. Please configure it to the proper settings and re-run!", ConsoleColor.Yellow);
                 Console.ReadKey();
                 Environment.Exit(0);
             }
             else
             {
-                conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
                 try
-                {
-                    Console.WriteLine(Directory.GetCurrentDirectory());
+                { 
                     var asm = Assembly.LoadFile(Directory.GetCurrentDirectory() + @"\" + conf.TransportDLL);
                     WriteLogMessage($"Loaded Assembly: {asm.FullName}", ConsoleColor.Green);
 
@@ -68,7 +69,8 @@ namespace LightReflectiveMirror
 
                         WriteLogMessage("Starting Transport...", ConsoleColor.Green);
 
-                        transport.OnServerError = (clientID, error) => {
+                        transport.OnServerError = (clientID, error) => 
+                        {
                             WriteLogMessage($"Transport Error, Client: {clientID}, Error: {error}", ConsoleColor.Red);
                         };
 
@@ -109,11 +111,8 @@ namespace LightReflectiveMirror
 
             while (true)
             {
-                if (updateMethod != null)
-                    updateMethod.Invoke(transport, null);
-
-                if (lateUpdateMethod != null)
-                    lateUpdateMethod.Invoke(transport, null);
+                if (updateMethod != null) { updateMethod.Invoke(transport, null); }
+                if (lateUpdateMethod != null) { lateUpdateMethod.Invoke(transport, null); }
 
                 _currentHeartbeatTimer++;
 
@@ -122,9 +121,7 @@ namespace LightReflectiveMirror
                     _currentHeartbeatTimer = 0;
 
                     for(int i = 0; i < _currentConnections.Count; i++)
-                    {
                         transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(new byte[] { 200 }));
-                    }
 
                     GC.Collect();
                 }
@@ -146,17 +143,10 @@ namespace LightReflectiveMirror
             updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-            if (awakeMethod != null)
-                WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow);
-
-            if (startMethod != null)
-                WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow);
-
-            if (updateMethod != null)
-                WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow);
-
-            if (lateUpdateMethod != null)
-                WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow);
+            if (awakeMethod != null) { WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow); }
+            if (startMethod != null) { WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow); }
+            if (updateMethod != null) { WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow); }
+            if (lateUpdateMethod != null) { WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow); }
         }
 
         void WriteTitle()
