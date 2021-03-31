@@ -7,7 +7,7 @@ namespace LightReflectiveMirror
 {
     public class RelayHandler
     {
-        private List<Room> _rooms = new List<Room>();
+        public List<Room> rooms = new List<Room>();
         private List<int> _pendingAuthentication = new List<int>();
         private ArrayPool<byte> _sendBuffers;
         private int _maxPacketSize = 0;
@@ -115,16 +115,16 @@ namespace LightReflectiveMirror
             int pos = 0;
             var buffer = _sendBuffers.Rent(500);
             buffer.WriteByte(ref pos, (byte)OpCodes.ServerListReponse);
-            for(int i = 0; i < _rooms.Count; i++)
+            for(int i = 0; i < rooms.Count; i++)
             {
-                if (_rooms[i].isPublic)
+                if (rooms[i].isPublic)
                 {
                     buffer.WriteBool(ref pos, true);
-                    buffer.WriteString(ref pos, _rooms[i].serverName);
-                    buffer.WriteString(ref pos, _rooms[i].serverData);
-                    buffer.WriteInt(ref pos, _rooms[i].serverId);
-                    buffer.WriteInt(ref pos, _rooms[i].maxPlayers);
-                    buffer.WriteInt(ref pos, _rooms[i].clients.Count + 1);
+                    buffer.WriteString(ref pos, rooms[i].serverName);
+                    buffer.WriteString(ref pos, rooms[i].serverData);
+                    buffer.WriteInt(ref pos, rooms[i].serverId);
+                    buffer.WriteInt(ref pos, rooms[i].maxPlayers);
+                    buffer.WriteInt(ref pos, rooms[i].clients.Count + 1);
                 }
             }
             buffer.WriteBool(ref pos, false);
@@ -172,13 +172,13 @@ namespace LightReflectiveMirror
 
         Room GetRoomForPlayer(int clientId)
         {
-            for(int i = 0; i < _rooms.Count; i++)
+            for(int i = 0; i < rooms.Count; i++)
             {
-                if (_rooms[i].hostId == clientId)
-                    return _rooms[i];
+                if (rooms[i].hostId == clientId)
+                    return rooms[i];
 
-                if (_rooms[i].clients.Contains(clientId))
-                    return _rooms[i];
+                if (rooms[i].clients.Contains(clientId))
+                    return rooms[i];
             }
 
             return null;
@@ -188,13 +188,13 @@ namespace LightReflectiveMirror
         {
             LeaveRoom(clientId);
 
-            for(int i = 0; i < _rooms.Count; i++)
+            for(int i = 0; i < rooms.Count; i++)
             {
-                if(_rooms[i].serverId == serverId)
+                if(rooms[i].serverId == serverId)
                 {
-                    if(_rooms[i].clients.Count < _rooms[i].maxPlayers)
+                    if(rooms[i].clients.Count < rooms[i].maxPlayers)
                     {
-                        _rooms[i].clients.Add(clientId);
+                        rooms[i].clients.Add(clientId);
 
                         int sendJoinPos = 0;
                         byte[] sendJoinBuffer = _sendBuffers.Rent(5);
@@ -203,7 +203,7 @@ namespace LightReflectiveMirror
                         sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
 
                         Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                        Program.transport.ServerSend(_rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                        Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
                         _sendBuffers.Return(sendJoinBuffer);
                         return;
                     }
@@ -236,7 +236,7 @@ namespace LightReflectiveMirror
                 serverId = GetRandomServerID()
             };
 
-            _rooms.Add(room);
+            rooms.Add(room);
 
             int pos = 0;
             byte[] sendBuffer = _sendBuffers.Rent(5);
@@ -250,28 +250,28 @@ namespace LightReflectiveMirror
 
         void LeaveRoom(int clientId, int requiredHostId = -1)
         {
-            for(int i = 0; i < _rooms.Count; i++)
+            for(int i = 0; i < rooms.Count; i++)
             {
-                if(_rooms[i].hostId == clientId)
+                if(rooms[i].hostId == clientId)
                 {
                     int pos = 0;
                     byte[] sendBuffer = _sendBuffers.Rent(1);
                     sendBuffer.WriteByte(ref pos, (byte)OpCodes.ServerLeft);
 
-                    for(int x = 0; x < _rooms[i].clients.Count; x++)
-                        Program.transport.ServerSend(_rooms[i].clients[x], 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+                    for(int x = 0; x < rooms[i].clients.Count; x++)
+                        Program.transport.ServerSend(rooms[i].clients[x], 0, new ArraySegment<byte>(sendBuffer, 0, pos));
 
                     _sendBuffers.Return(sendBuffer);
-                    _rooms[i].clients.Clear();
-                    _rooms.RemoveAt(i);
+                    rooms[i].clients.Clear();
+                    rooms.RemoveAt(i);
                     return;
                 }
                 else
                 {
-                    if (requiredHostId >= 0 && _rooms[i].hostId != requiredHostId)
+                    if (requiredHostId >= 0 && rooms[i].hostId != requiredHostId)
                         continue;
 
-                    if(_rooms[i].clients.RemoveAll(x => x == clientId) > 0)
+                    if(rooms[i].clients.RemoveAll(x => x == clientId) > 0)
                     {
                         int pos = 0;
                         byte[] sendBuffer = _sendBuffers.Rent(5);
@@ -279,7 +279,7 @@ namespace LightReflectiveMirror
                         sendBuffer.WriteByte(ref pos, (byte)OpCodes.PlayerDisconnected);
                         sendBuffer.WriteInt(ref pos, clientId);
 
-                        Program.transport.ServerSend(_rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+                        Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
                         _sendBuffers.Return(sendBuffer);
                     }
                 }
@@ -311,8 +311,8 @@ namespace LightReflectiveMirror
 
         bool DoesServerIdExist(int id)
         {
-            for (int i = 0; i < _rooms.Count; i++)
-                if (_rooms[i].serverId == id)
+            for (int i = 0; i < rooms.Count; i++)
+                if (rooms[i].serverId == id)
                     return true;
 
             return false;
