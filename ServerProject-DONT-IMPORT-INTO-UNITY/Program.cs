@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using LightReflectiveMirror.Endpoints;
 using Mirror;
 using Newtonsoft.Json;
 
@@ -11,6 +13,7 @@ namespace LightReflectiveMirror
     class Program
     {
         public static Transport transport;
+        public static Program instance;
         public static Config conf;
 
         private RelayHandler _relay;
@@ -19,17 +22,25 @@ namespace LightReflectiveMirror
         private MethodInfo _updateMethod;
         private MethodInfo _lateUpdateMethod;
 
+        private DateTime _startupTime;
+
         private List<int> _currentConnections = new List<int>();
         private int _currentHeartbeatTimer = 0;
 
         private const string CONFIG_PATH = "config.json";
 
-        public static void Main(string[] args)
-        => new Program().MainAsync().GetAwaiter().GetResult();
+        public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
+
+        public int GetConnections() => _currentConnections.Count;
+        public TimeSpan GetUptime() => DateTime.Now - _startupTime;
+        public int GetPublicRoomCount() => _relay.rooms.Where(x => x.isPublic).Count();
+        public List<Room> GetRooms() => _relay.rooms;
 
         public async Task MainAsync()
         {
             WriteTitle();
+            instance = this;
+            _startupTime = DateTime.Now;
 
             if (!File.Exists(CONFIG_PATH))
             {
@@ -93,6 +104,16 @@ namespace LightReflectiveMirror
                         transport.ServerStart();
 
                         WriteLogMessage("Transport Started!", ConsoleColor.Green);
+
+                        if (conf.UseEndpoint)
+                        {
+                            var endpoint = new EndpointServer();
+
+                            if (endpoint.Start(conf.EndpointPort))
+                                WriteLogMessage("Endpoint Service Started!", ConsoleColor.Green);
+                            else
+                                WriteLogMessage("Endpoint failure, please run as administrator.", ConsoleColor.Red);
+                        }
                     }
                     else
                     {

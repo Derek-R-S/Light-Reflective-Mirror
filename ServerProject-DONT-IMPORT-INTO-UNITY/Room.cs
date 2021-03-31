@@ -4,7 +4,8 @@ using System.Text;
 
 namespace LightReflectiveMirror
 {
-    class Room
+    [Serializable]
+    public class Room
     {
         public int serverId;
         public int hostId;

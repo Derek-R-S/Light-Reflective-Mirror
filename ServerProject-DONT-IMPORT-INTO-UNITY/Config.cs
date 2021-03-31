@@ -11,5 +11,8 @@ namespace LightReflectiveMirror
         public string AuthenticationKey = "Secret Auth Key";
         public int UpdateLoopTime = 10;
         public int UpdateHeartbeatInterval = 100;
+        public bool UseEndpoint = false;
+        public ushort EndpointPort = 6969;
+        public bool EndpointServerList = false;
     }
 }
