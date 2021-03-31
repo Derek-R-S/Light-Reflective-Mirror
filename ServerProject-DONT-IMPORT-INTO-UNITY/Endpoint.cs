@@ -31,6 +31,20 @@ namespace LightReflectiveMirror.Endpoints
             string json = JsonConvert.SerializeObject(stats, Formatting.Indented);
             await context.Response.SendResponseAsync(json);
         }
+
+        [RestRoute("Get", "/api/servers")]
+        public async Task ServerList(IHttpContext context)
+        {
+            if (Program.conf.EndpointServerList)
+            {
+                string json = JsonConvert.SerializeObject(Program.instance.GetRooms(), Formatting.Indented);
+                await context.Response.SendResponseAsync(json);
+            }
+            else
+            {
+                await context.Response.SendResponseAsync("Access Denied");
+            }
+        }
     }
 
     public class EndpointServer

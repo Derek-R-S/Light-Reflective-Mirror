@@ -13,5 +13,6 @@ namespace LightReflectiveMirror
         public int UpdateHeartbeatInterval = 100;
         public bool UseEndpoint = false;
         public ushort EndpointPort = 6969;
+        public bool EndpointServerList = false;
     }
 }
