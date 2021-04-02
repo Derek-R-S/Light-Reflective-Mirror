@@ -1,10 +1,12 @@
 ﻿using Mirror;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Networking;
 
 namespace LightReflectiveMirror
 {
@@ -14,6 +16,7 @@ namespace LightReflectiveMirror
         [Header("Connection Variables")]
         public Transport clientToServerTransport;
         public string serverIP = "34.67.125.123";
+        public ushort endpointServerPort = 8080;
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
@@ -107,15 +110,9 @@ namespace LightReflectiveMirror
         public void RequestServerList()
         {
             if (_isAuthenticated && _connectedToRelay)
-            {
-                int pos = 0;
-                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.RequestServers);
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-            }
+                StartCoroutine(GetServerList());
             else
-            {
                 Debug.Log("You must be connected to Relay to request server list!");
-            }
         }
 
         void DataReceived(ArraySegment<byte> segmentData, int channel)
@@ -175,24 +172,44 @@ namespace LightReflectiveMirror
                             _currentMemberId++;
                         }
                         break;
-                    case OpCodes.ServerListReponse:
-                        relayServerList.Clear();
-                        while (data.ReadBool(ref pos))
-                        {
-                            relayServerList.Add(new RelayServerInfo()
-                            {
-                                serverName = data.ReadString(ref pos),
-                                serverData = data.ReadString(ref pos),
-                                serverId = data.ReadInt(ref pos),
-                                maxPlayers = data.ReadInt(ref pos),
-                                currentPlayers = data.ReadInt(ref pos)
-                            });
-                        }
-                        serverListUpdated?.Invoke();
-                        break;
                 }
             }
             catch { }
+        }
+
+        IEnumerator GetServerList()
+        {
+            Uri uri = new Uri($"http://{serverIP}:{endpointServerPort}/api/servers");
+
+            using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+            {
+                // Request and wait for the desired page.
+                yield return webRequest.SendWebRequest();
+                var result = webRequest.downloadHandler.text;
+
+                switch (webRequest.result)
+                {
+                    case UnityWebRequest.Result.ConnectionError:
+                    case UnityWebRequest.Result.DataProcessingError:
+                    case UnityWebRequest.Result.ProtocolError:
+                        Debug.LogWarning("LRM | Server list request failed. Make sure your ports match!");
+                        break;
+
+                    case UnityWebRequest.Result.Success:
+                        if (result == "Access Denied")
+                        {
+                            Debug.LogWarning("LRM | Server list request denied. Make sure you enable 'EndpointServerList' in server config!");
+                            break;
+                        }
+                        else
+                        {
+                            relayServerList?.Clear();
+                            relayServerList = JsonConvert.DeserializeObject<RelayServerInfo[]>(webRequest.downloadHandler.text).ToList();
+                            serverListUpdated?.Invoke();
+                            break;
+                        }
+                }
+            }
         }
 
         public void UpdateRoomInfo(string newServerName = null, string newServerData = null, bool? newServerIsPublic = null, int? newPlayerCap = null)
