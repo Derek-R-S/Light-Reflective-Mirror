@@ -204,7 +204,7 @@ namespace LightReflectiveMirror
                         else
                         {
                             relayServerList?.Clear();
-                            relayServerList = JsonConvert.DeserializeObject<RelayServerInfo[]>(webRequest.downloadHandler.text).ToList();
+                            relayServerList = JsonConvert.DeserializeObject<RelayServerInfo[]>(result).ToList();
                             serverListUpdated?.Invoke();
                             break;
                         }
