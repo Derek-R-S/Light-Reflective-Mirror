@@ -49,8 +49,6 @@ namespace LightReflectiveMirror
         private int _currentMemberId;
         private bool _callbacksInitialized = false;
         private int _cachedHostID;
-        private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
-        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
         private UdpClient _NATPuncher;
         private IPEndPoint _NATIP;
         private IPEndPoint _relayPuncherIP;
@@ -58,7 +56,9 @@ namespace LightReflectiveMirror
         private IPEndPoint _directConnectEndpoint;
         private SocketProxy _clientProxy;
         private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy>();
-
+        private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
+        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
+        
         public override bool ClientConnected() => _isClient;
         private void OnConnectedToRelay() => _connectedToRelay = true;
         public bool IsAuthenticated() => _isAuthenticated;
@@ -66,7 +66,9 @@ namespace LightReflectiveMirror
         public override bool Available() => _connectedToRelay;
         public override void ClientConnect(Uri uri) => ClientConnect(uri.Host);
         public override int GetMaxPacketSize(int channelId = 0) => clientToServerTransport.GetMaxPacketSize(channelId);
-        public override string ServerGetClientAddress(int connectionId) {
+        
+        public override string ServerGetClientAddress(int connectionId) 
+        {
             if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
                 return relayId.ToString();
 
