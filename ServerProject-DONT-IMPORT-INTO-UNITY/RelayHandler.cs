@@ -185,16 +185,21 @@ namespace LightReflectiveMirror
                                 sendJoinBuffer.WriteString(ref sendJoinPos, rooms[i].hostIP.Address.ToString());
 
                             sendJoinBuffer.WriteInt(ref sendJoinPos, rooms[i].useNATPunch ? rooms[i].hostIP.Port : rooms[i].port);
+                            sendJoinBuffer.WriteBool(ref sendJoinPos, rooms[i].useNATPunch);
 
                             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
 
-                            sendJoinPos = 0;
-                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
-                            Console.WriteLine(Program.instance.NATConnections[clientId].Address.ToString());
-                            sendJoinBuffer.WriteString(ref sendJoinPos, Program.instance.NATConnections[clientId].Address.ToString());
-                            sendJoinBuffer.WriteInt(ref sendJoinPos, Program.instance.NATConnections[clientId].Port);
+                            if (rooms[i].useNATPunch)
+                            {
+                                sendJoinPos = 0;
+                                sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
+                                Console.WriteLine(Program.instance.NATConnections[clientId].Address.ToString());
+                                sendJoinBuffer.WriteString(ref sendJoinPos, Program.instance.NATConnections[clientId].Address.ToString());
+                                sendJoinBuffer.WriteInt(ref sendJoinPos, Program.instance.NATConnections[clientId].Port);
+                                sendJoinBuffer.WriteBool(ref sendJoinPos, true);
 
-                            Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                                Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                            }
 
                             _sendBuffers.Return(sendJoinBuffer);
 
