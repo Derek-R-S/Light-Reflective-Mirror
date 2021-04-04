@@ -1,4 +1,4 @@
-﻿using Mirror;
+using Mirror;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -368,14 +368,14 @@ namespace LightReflectiveMirror
         }
 
         IEnumerator GetServerList()
-        {
+        {  
             string uri = $"http://{serverIP}:{endpointServerPort}/api/compressed/servers";
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
                 // Request and wait for the desired page.
                 yield return webRequest.SendWebRequest();
-                var result = webRequest.downloadHandler.text.Decompress();
+                var result = webRequest.downloadHandler.text;
 
 #if UNITY_2020_1_OR_NEWER
                 switch (webRequest.result)
@@ -395,7 +395,7 @@ namespace LightReflectiveMirror
                         else
                         {
                             relayServerList?.Clear();
-                            relayServerList = JsonConvert.DeserializeObject<RelayServerInfo[]>(result).ToList();
+                            relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
                             serverListUpdated?.Invoke();
                             break;
                         }
@@ -414,7 +414,7 @@ namespace LightReflectiveMirror
                     else
                     {
                         relayServerList?.Clear();
-                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result);
+                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
                         serverListUpdated?.Invoke();
                     }
                 }
