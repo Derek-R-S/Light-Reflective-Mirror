@@ -33,6 +33,11 @@ namespace LightReflectiveMirror
             firstToSecond.Remove(first);
         }
 
+        public ICollection<TFirst> GetAllKeys()
+        {
+            return secondToFirst.Values;
+        }
+
         public bool TryGetBySecond(TSecond second, out TFirst first)
         {
             return secondToFirst.TryGetValue(second, out first);

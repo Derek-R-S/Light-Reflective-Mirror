@@ -4,6 +4,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
@@ -21,6 +23,10 @@ namespace LightReflectiveMirror
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
         public UnityEvent diconnectedFromRelay;
+        [Header("NAT Punchthrough")]
+        [Help("NAT Punchthrough will require the Direct Connect module attached.")]
+        public bool useNATPunch = true;
+        public ushort NATPunchtroughPort = 7776;
         [Header("Server Hosting Data")]
         public string serverName = "My awesome server!";
         public string extraServerData = "Map 1";
@@ -32,30 +38,136 @@ namespace LightReflectiveMirror
         [Header("Server Information")]
         public int serverId = -1;
 
+        private LRMDirectConnectModule _directConnectModule;
+
         private byte[] _clientSendBuffer;
         private bool _connectedToRelay = false;
         private bool _isClient = false;
         private bool _isServer = false;
+        private bool _directConnected = false;
         private bool _isAuthenticated = false;
         private int _currentMemberId;
         private bool _callbacksInitialized = false;
+        private int _cachedHostID;
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
+        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
+        private UdpClient _NATPuncher;
+        private IPEndPoint _NATIP;
+        private IPEndPoint _relayPuncherIP;
+        private byte[] _punchData = new byte[1] { 1 };
+        private IPEndPoint _directConnectEndpoint;
+        private SocketProxy _clientProxy;
+        private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy>();
 
         public override bool ClientConnected() => _isClient;
         private void OnConnectedToRelay() => _connectedToRelay = true;
         public bool IsAuthenticated() => _isAuthenticated;
         public override bool ServerActive() => _isServer;
         public override bool Available() => _connectedToRelay;
-        public override void ClientEarlyUpdate() => clientToServerTransport.ClientEarlyUpdate();
-        public override void ClientLateUpdate() => clientToServerTransport.ClientLateUpdate();
         public override void ClientConnect(Uri uri) => ClientConnect(uri.Host);
         public override int GetMaxPacketSize(int channelId = 0) => clientToServerTransport.GetMaxPacketSize(channelId);
-        public override string ServerGetClientAddress(int connectionId) => _connectedRelayClients.GetBySecond(connectionId).ToString();
+        public override string ServerGetClientAddress(int connectionId) {
+            if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
+                return relayId.ToString();
+
+            if (_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
+                return "DIRECT-" + directId;
+
+            // Shouldn't ever get here.
+            return "?";
+        }
+
+        public override void ClientEarlyUpdate()
+        {
+            clientToServerTransport.ClientEarlyUpdate();
+
+            if (_directConnectModule != null)
+                _directConnectModule.directConnectTransport.ClientEarlyUpdate();
+        }
+
+        public override void ClientLateUpdate()
+        {
+            clientToServerTransport.ClientLateUpdate();
+
+            if (_directConnectModule != null)
+                _directConnectModule.directConnectTransport.ClientLateUpdate();
+        }
+
+        public override void ServerEarlyUpdate()
+        {
+            if (_directConnectModule != null)
+                _directConnectModule.directConnectTransport.ServerEarlyUpdate();
+        }
+
+        void RecvData(IAsyncResult result)
+        {
+            IPEndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
+            var data = _NATPuncher.EndReceive(result, ref newClientEP);
+
+            if (!newClientEP.Address.Equals(_relayPuncherIP.Address))
+            {
+                if (_isServer)
+                {
+                    if(_serverProxies.TryGetByFirst(newClientEP, out SocketProxy foundProxy))
+                    {
+                        if (data.Length > 2)
+                            foundProxy.RelayData(data, data.Length);
+                    }
+                    else
+                    {
+                        _serverProxies.Add(newClientEP, new SocketProxy(_NATIP.Port + 1, newClientEP));
+                        _serverProxies.GetByFirst(newClientEP).dataReceived += ServerProcessProxyData;
+                    }
+                }
+
+                if (_isClient)
+                {
+                    if(_clientProxy == null)
+                    {
+                        _clientProxy = new SocketProxy(_NATIP.Port - 1);
+                        _clientProxy.dataReceived += ClientProcessProxyData;
+                    }
+                    else
+                    {
+                        _clientProxy.ClientRelayData(data, data.Length);
+                    }
+                }
+            }
+
+            _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
+        }
+
+        void ServerProcessProxyData(IPEndPoint remoteEndpoint, byte[] data)
+        {
+            _NATPuncher.Send(data, data.Length, remoteEndpoint);
+        }
+
+        void ClientProcessProxyData(IPEndPoint _, byte[] data)
+        {
+            _NATPuncher.Send(data, data.Length, _directConnectEndpoint);
+        }
+
+        public override void ServerLateUpdate()
+        {
+            if (_directConnectModule != null)
+                _directConnectModule.directConnectTransport.ServerLateUpdate();
+        }
 
         private void Awake()
         {
             if (clientToServerTransport is LightReflectiveMirrorTransport)
                 throw new Exception("Haha real funny... Use a different transport.");
+
+            _directConnectModule = GetComponent<LRMDirectConnectModule>();
+
+            if(_directConnectModule != null)
+            {
+                if (useNATPunch && !_directConnectModule.SupportsNATPunch())
+                {
+                    Debug.LogWarning("LRM | NATPunch is turned on but the transport used does not support it. It will be disabled.");
+                    useNATPunch = false;
+                }
+            }
 
             SetupCallbacks();
 
@@ -104,6 +216,20 @@ namespace LightReflectiveMirror
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, 200);
                 clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+
+                if (_NATPuncher != null)
+                    _NATPuncher.Send(new byte[] { 0 }, 1, _relayPuncherIP);
+
+                var keys = new List<IPEndPoint>(_serverProxies.GetAllKeys());
+
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    if (DateTime.Now.Subtract(_serverProxies.GetByFirst(keys[i]).lastInteractionTime).TotalSeconds > 10)
+                    {
+                        _serverProxies.GetByFirst(keys[i]).Dispose();
+                        _serverProxies.Remove(keys[i]);
+                    }
+                }
             }
         }
 
@@ -113,6 +239,15 @@ namespace LightReflectiveMirror
                 StartCoroutine(GetServerList());
             else
                 Debug.Log("You must be connected to Relay to request server list!");
+        }
+
+        IEnumerator NATPunch(IPEndPoint remoteAddress)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                _NATPuncher.Send(_punchData, 1, remoteAddress);
+                yield return new WaitForSeconds(0.25f);
+            }
         }
 
         void DataReceived(ArraySegment<byte> segmentData, int channel)
@@ -136,7 +271,10 @@ namespace LightReflectiveMirror
                         var recvData = data.ReadBytes(ref pos);
 
                         if (_isServer)
-                            OnServerDataReceived?.Invoke(_connectedRelayClients.GetByFirst(data.ReadInt(ref pos)), new ArraySegment<byte>(recvData), channel);
+                        {
+                            if(_connectedRelayClients.TryGetByFirst(data.ReadInt(ref pos), out int clientID))
+                                OnServerDataReceived?.Invoke(clientID, new ArraySegment<byte>(recvData), channel);
+                        }
 
                         if (_isClient)
                             OnClientDataReceived?.Invoke(new ArraySegment<byte>(recvData), channel);
@@ -152,8 +290,11 @@ namespace LightReflectiveMirror
                         if (_isServer)
                         {
                             int user = data.ReadInt(ref pos);
-                            OnServerDisconnected?.Invoke(_connectedRelayClients.GetByFirst(user));
-                            _connectedRelayClients.Remove(user);
+                            if (_connectedRelayClients.TryGetByFirst(user, out int clientID))
+                            {
+                                OnServerDisconnected?.Invoke(_connectedRelayClients.GetByFirst(clientID));
+                                _connectedRelayClients.Remove(user);
+                            }
                         }
                         break;
                     case OpCodes.RoomCreated:
@@ -172,14 +313,64 @@ namespace LightReflectiveMirror
                             _currentMemberId++;
                         }
                         break;
+                    case OpCodes.DirectConnectIP:
+                        var ip = data.ReadString(ref pos);
+                        int port = data.ReadInt(ref pos);
+                        bool attemptNatPunch = data.ReadBool(ref pos);
+
+                        _directConnectEndpoint = new IPEndPoint(IPAddress.Parse(ip), port);
+
+                        if (useNATPunch)
+                        {
+                            StartCoroutine(NATPunch(_directConnectEndpoint));
+                        }
+
+                        if (!_isServer)
+                        {
+                            if (_clientProxy == null && useNATPunch && attemptNatPunch)
+                            {
+                                _clientProxy = new SocketProxy(_NATIP.Port - 1);
+                                _clientProxy.dataReceived += ClientProcessProxyData;
+                            }
+
+                            if (useNATPunch && attemptNatPunch)
+                                _directConnectModule.JoinServer("127.0.0.1", _NATIP.Port - 1);
+                            else
+                                _directConnectModule.JoinServer(ip, port);
+                        }
+
+                        break;
+                    case OpCodes.RequestNATConnection:
+                        if (GetLocalIp() != null && _directConnectModule != null)
+                        {
+                            _NATPuncher = new UdpClient();
+                            _NATPuncher.ExclusiveAddressUse = false;
+                            _NATIP = new IPEndPoint(IPAddress.Parse(GetLocalIp()), UnityEngine.Random.Range(16000, 17000));
+                            _NATPuncher.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            _NATPuncher.Client.Bind(_NATIP);
+                            _relayPuncherIP = new IPEndPoint(IPAddress.Parse(serverIP), NATPunchtroughPort);
+
+                            byte[] initalData = new byte[150];
+                            int sendPos = 0;
+
+                            initalData.WriteBool(ref sendPos, true);
+                            initalData.WriteString(ref sendPos, data.ReadString(ref pos));
+
+                            // Send 3 to lower chance of it being dropped or corrupted when received on server.
+                            _NATPuncher.Send(initalData, sendPos,_relayPuncherIP);
+                            _NATPuncher.Send(initalData, sendPos,_relayPuncherIP);
+                            _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
+                            _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
+                        }
+                        break;
                 }
             }
-            catch { }
+            catch(Exception e) { print(e); }
         }
 
         IEnumerator GetServerList()
         {
-            Uri uri = new Uri($"http://{serverIP}:{endpointServerPort}/api/servers");
+            string uri = $"http://{serverIP}:{endpointServerPort}/api/servers";
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -187,6 +378,7 @@ namespace LightReflectiveMirror
                 yield return webRequest.SendWebRequest();
                 var result = webRequest.downloadHandler.text;
 
+#if UNITY_2020_1_OR_NEWER
                 switch (webRequest.result)
                 {
                     case UnityWebRequest.Result.ConnectionError:
@@ -209,6 +401,25 @@ namespace LightReflectiveMirror
                             break;
                         }
                 }
+#else
+                if (webRequest.isNetworkError || webRequest.isHttpError)
+                {
+                    Debug.LogWarning("LRM | Network Error while retreiving the server list!");
+                }
+                else
+                {
+                    if (result == "Access Denied")
+                    {
+                        Debug.LogWarning("LRM | Server list request denied. Make sure you enable 'EndpointServerList' in server config!");
+                    }
+                    else
+                    {
+                        relayServerList?.Clear();
+                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result);
+                        serverListUpdated?.Invoke();
+                    }
+                }
+#endif
             }
         }
 
@@ -266,8 +477,7 @@ namespace LightReflectiveMirror
 
         public override void ClientConnect(string address)
         {
-            int hostId = 0;
-            if (!Available() || !int.TryParse(address, out hostId))
+            if (!Available() || !int.TryParse(address, out _cachedHostID))
             {
                 Debug.Log("Not connected to relay or invalid server id!");
                 OnClientDisconnected?.Invoke();
@@ -278,8 +488,15 @@ namespace LightReflectiveMirror
                 throw new Exception("Cannot connect while hosting/already connected!");
 
             int pos = 0;
+            _directConnected = false;
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
-            _clientSendBuffer.WriteInt(ref pos, hostId);
+            _clientSendBuffer.WriteInt(ref pos, _cachedHostID);
+            _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
+
+            if (GetLocalIp() == null)
+                _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+            else
+                _clientSendBuffer.WriteString(ref pos, GetLocalIp());
 
             _isClient = true;
 
@@ -294,16 +511,26 @@ namespace LightReflectiveMirror
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.LeaveRoom);
 
             clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+
+            if (_directConnectModule != null)
+                _directConnectModule.ClientDisconnect();
         }
 
         public override void ClientSend(int channelId, ArraySegment<byte> segment)
         {
-            int pos = 0;
-            _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.SendData);
-            _clientSendBuffer.WriteBytes(ref pos, segment.Array.Take(segment.Count).ToArray());
-            _clientSendBuffer.WriteInt(ref pos, 0);
+            if (_directConnected)
+            {
+                _directConnectModule.ClientSend(segment, channelId);
+            }
+            else
+            {
+                int pos = 0;
+                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.SendData);
+                _clientSendBuffer.WriteBytes(ref pos, segment.Array.Take(segment.Count).ToArray());
+                _clientSendBuffer.WriteInt(ref pos, 0);
 
-            clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+                clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+            }
         }
 
         public override bool ServerDisconnect(int connectionId)
@@ -316,17 +543,27 @@ namespace LightReflectiveMirror
                 return true;
             }
 
+            if(_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
+                return _directConnectModule.KickClient(directId);
+
             return false;
         }
 
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
         {
-            int pos = 0;
-            _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.SendData);
-            _clientSendBuffer.WriteBytes(ref pos, segment.Array.Take(segment.Count).ToArray());
-            _clientSendBuffer.WriteInt(ref pos, _connectedRelayClients.GetBySecond(connectionId));
+            if (_directConnectModule != null && _connectedDirectClients.TryGetBySecond(connectionId, out int directId))
+            {
+                _directConnectModule.ServerSend(directId, segment, channelId);
+            }
+            else
+            {
+                int pos = 0;
+                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.SendData);
+                _clientSendBuffer.WriteBytes(ref pos, segment.Array.Take(segment.Count).ToArray());
+                _clientSendBuffer.WriteInt(ref pos, _connectedRelayClients.GetBySecond(connectionId));
 
-            clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+                clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+            }
         }
 
         public override void ServerStart()
@@ -346,6 +583,15 @@ namespace LightReflectiveMirror
             _isServer = true;
             _connectedRelayClients = new BiDictionary<int, int>();
             _currentMemberId = 1;
+            _connectedDirectClients = new BiDictionary<int, int>();
+
+            var keys = new List<IPEndPoint>(_serverProxies.GetAllKeys());
+
+            for(int i = 0; i < keys.Count; i++)
+            {
+                _serverProxies.GetByFirst(keys[i]).Dispose();
+                _serverProxies.Remove(keys[i]);
+            }
 
             int pos = 0;
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.CreateRoom);
@@ -353,6 +599,28 @@ namespace LightReflectiveMirror
             _clientSendBuffer.WriteString(ref pos, serverName);
             _clientSendBuffer.WriteBool(ref pos, isPublicServer);
             _clientSendBuffer.WriteString(ref pos, extraServerData);
+            // If we have direct connect module, and our local IP isnt null, tell server. Only time local IP is null is on cellular networks, such as IOS and Android.
+            _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null ? GetLocalIp() != null ? true : false : false);
+
+            if (_directConnectModule != null && GetLocalIp() != null)
+            {
+                _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+                // Transport port will be NAT port + 1 for the proxy connections.
+                _directConnectModule.StartServer(useNATPunch ? _NATIP.Port + 1 : -1);
+            }
+            else
+                _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+
+            if (useNATPunch)
+            {
+                _clientSendBuffer.WriteBool(ref pos, true);
+                _clientSendBuffer.WriteInt(ref pos, 0);
+            }
+            else
+            {
+                _clientSendBuffer.WriteBool(ref pos, false);
+                _clientSendBuffer.WriteInt(ref pos, _directConnectModule == null ? 1 : _directConnectModule.SupportsNATPunch() ? _directConnectModule.GetTransportPort() : 1);
+            }
 
             clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
         }
@@ -366,6 +634,17 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.LeaveRoom);
 
                 clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+
+                if (_directConnectModule != null)
+                    _directConnectModule.StopServer();
+
+                var keys = new List<IPEndPoint>(_serverProxies.GetAllKeys());
+
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    _serverProxies.GetByFirst(keys[i]).Dispose();
+                    _serverProxies.Remove(keys[i]);
+                }
             }
         }
 
@@ -392,8 +671,87 @@ namespace LightReflectiveMirror
         public enum OpCodes
         {
             Default = 0, RequestID = 1, JoinServer = 2, SendData = 3, GetID = 4, ServerJoined = 5, GetData = 6, CreateRoom = 7, ServerLeft = 8, PlayerDisconnected = 9, RoomCreated = 10,
-            LeaveRoom = 11, KickPlayer = 12, AuthenticationRequest = 13, AuthenticationResponse = 14, RequestServers = 15, ServerListReponse = 16, Authenticated = 17, UpdateRoomData = 18, ServerConnectionData = 19
+            LeaveRoom = 11, KickPlayer = 12, AuthenticationRequest = 13, AuthenticationResponse = 14, Authenticated = 17, UpdateRoomData = 18, ServerConnectionData = 19, RequestNATConnection = 20,
+            DirectConnectIP = 21
         }
+
+        private static string GetLocalIp()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+
+            return null;
+        }
+
+        #region Direct Connect Module
+        public void DirectAddClient(int clientID)
+        {
+            if (!_isServer)
+                return;
+
+            _connectedDirectClients.Add(clientID, _currentMemberId);
+            OnServerConnected?.Invoke(_currentMemberId);
+            _currentMemberId++;
+        }
+
+        public void DirectRemoveClient(int clientID)
+        {
+            if (!_isServer)
+                return;
+
+            OnServerDisconnected?.Invoke(_connectedDirectClients.GetByFirst(clientID));
+            _connectedDirectClients.Remove(clientID);
+        }
+
+        public void DirectReceiveData(ArraySegment<byte> data, int channel, int clientID = -1)
+        {
+            if (_isServer)
+                OnServerDataReceived?.Invoke(_connectedDirectClients.GetByFirst(clientID), data, channel);
+
+            if (_isClient)
+                OnClientDataReceived?.Invoke(data, channel);
+        }
+
+        public void DirectClientConnected()
+        {
+            _directConnected = true;
+            OnClientConnected?.Invoke();
+        }
+
+        public void DirectDisconnected()
+        {
+            if (_directConnected)
+            {
+                _isClient = false;
+                _directConnected = false;
+                OnClientDisconnected?.Invoke();
+            }
+            else
+            {
+                int pos = 0;
+                _directConnected = false;
+                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
+                _clientSendBuffer.WriteInt(ref pos, _cachedHostID);
+                _clientSendBuffer.WriteBool(ref pos, false); // Direct failed, use relay
+
+                _isClient = true;
+
+                clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
+            }
+
+            if (_clientProxy != null)
+            {
+                _clientProxy.Dispose();
+                _clientProxy = null;
+            }
+        }
+        #endregion
     }
 
     [Serializable]
