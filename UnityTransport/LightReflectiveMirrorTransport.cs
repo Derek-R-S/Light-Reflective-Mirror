@@ -320,7 +320,7 @@ namespace LightReflectiveMirror
 
                         _directConnectEndpoint = new IPEndPoint(IPAddress.Parse(ip), port);
 
-                        if (useNATPunch)
+                        if (useNATPunch && attemptNatPunch)
                         {
                             StartCoroutine(NATPunch(_directConnectEndpoint));
                         }
@@ -343,8 +343,7 @@ namespace LightReflectiveMirror
                     case OpCodes.RequestNATConnection:
                         if (GetLocalIp() != null && _directConnectModule != null)
                         {
-                            _NATPuncher = new UdpClient();
-                            _NATPuncher.ExclusiveAddressUse = false;
+                            _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
                             _NATIP = new IPEndPoint(IPAddress.Parse(GetLocalIp()), UnityEngine.Random.Range(16000, 17000));
                             _NATPuncher.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                             _NATPuncher.Client.Bind(_NATIP);
@@ -370,13 +369,13 @@ namespace LightReflectiveMirror
 
         IEnumerator GetServerList()
         {
-            string uri = $"http://{serverIP}:{endpointServerPort}/api/servers";
+            string uri = $"http://{serverIP}:{endpointServerPort}/api/compressed/servers";
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
                 // Request and wait for the desired page.
                 yield return webRequest.SendWebRequest();
-                var result = webRequest.downloadHandler.text;
+                var result = webRequest.downloadHandler.text.Decompress();
 
 #if UNITY_2020_1_OR_NEWER
                 switch (webRequest.result)
@@ -388,7 +387,7 @@ namespace LightReflectiveMirror
                         break;
 
                     case UnityWebRequest.Result.Success:
-                        if (result == "Access Denied")
+                        if (result.Contains("403:Forbidden"))
                         {
                             Debug.LogWarning("LRM | Server list request denied. Make sure you enable 'EndpointServerList' in server config!");
                             break;
@@ -408,7 +407,7 @@ namespace LightReflectiveMirror
                 }
                 else
                 {
-                    if (result == "Access Denied")
+                    if (result.Contains("403:Forbidden"))
                     {
                         Debug.LogWarning("LRM | Server list request denied. Make sure you enable 'EndpointServerList' in server config!");
                     }
