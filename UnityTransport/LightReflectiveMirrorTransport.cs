@@ -383,22 +383,14 @@ namespace LightReflectiveMirror
                     case UnityWebRequest.Result.ConnectionError:
                     case UnityWebRequest.Result.DataProcessingError:
                     case UnityWebRequest.Result.ProtocolError:
-                        Debug.LogWarning("LRM | Server list request failed. Make sure your ports match!");
+                        Debug.LogWarning("LRM | Network Error while retreiving the server list!");
                         break;
 
                     case UnityWebRequest.Result.Success:
-                        if (result.Contains("403:Forbidden"))
-                        {
-                            Debug.LogWarning("LRM | Server list request denied. Make sure you enable 'EndpointServerList' in server config!");
-                            break;
-                        }
-                        else
-                        {
-                            relayServerList?.Clear();
-                            relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
-                            serverListUpdated?.Invoke();
-                            break;
-                        }
+                        relayServerList?.Clear();
+                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
+                        serverListUpdated?.Invoke();
+                        break;
                 }
 #else
                 if (webRequest.isNetworkError || webRequest.isHttpError)
@@ -407,16 +399,10 @@ namespace LightReflectiveMirror
                 }
                 else
                 {
-                    if (result.Contains("403:Forbidden"))
-                    {
-                        Debug.LogWarning("LRM | Server list request denied. Make sure you enable 'EndpointServerList' in server config!");
-                    }
-                    else
-                    {
-                        relayServerList?.Clear();
-                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
-                        serverListUpdated?.Invoke();
-                    }
+                    relayServerList?.Clear();
+                    relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
+                    serverListUpdated?.Invoke();
+                    break;
                 }
 #endif
             }
