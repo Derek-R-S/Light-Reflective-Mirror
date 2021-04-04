@@ -1,4 +1,7 @@
 ﻿using Grapevine;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
@@ -49,25 +52,28 @@ namespace LightReflectiveMirror.Endpoints
 
     public class EndpointServer
     {
-        public bool Start(ushort port = 6969)
+        public bool Start(ushort port = 8080)
         {
             try
             {
-                var server = RestServerBuilder.UseDefaults().Build();
-                server.Prefixes.Remove($"http://localhost:{1234}/");
-                server.Prefixes.Add($"http://*:{port}/");
-                server.Router.Options.SendExceptionMessages = false;
+                var config = new ConfigurationBuilder()
+                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .Build();
 
-                server.AfterStarting += (s) =>
+                Action<IServiceCollection> configServices = (services) =>
                 {
-                    string startup = @"
-********************************************************************************
-* Endpoint Server listening on "+$"{string.Join(", ", server.Prefixes)}" + @"
-* Be sure to Port Forward! :^)
-********************************************************************************
-";
-                    Console.WriteLine(startup);
+                    services.AddLogging(configure => configure.AddConsole());
+                    services.Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.None);
                 };
+
+                Action<IRestServer> configServer = (server) =>
+                {
+                    server.Prefixes.Add($"http://*:{port}/");
+                };
+
+                var server = new RestServerBuilder(new ServiceCollection(), config, configServices, configServer).Build();
+                server.Router.Options.SendExceptionMessages = false;
 
                 server.Start();
 

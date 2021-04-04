@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Text;
+using System.Net;
 
 namespace LightReflectiveMirror
 {
-    [Serializable]
+    [JsonObject(MemberSerialization.OptOut)]
     public class Room
     {
         public int serverId;
@@ -14,5 +14,15 @@ namespace LightReflectiveMirror
         public bool isPublic;
         public int maxPlayers;
         public List<int> clients;
+        [JsonIgnore]
+        public bool supportsDirectConnect = false;
+        [JsonIgnore]
+        public IPEndPoint hostIP;
+        [JsonIgnore]
+        public string hostLocalIP;
+        [JsonIgnore]
+        public bool useNATPunch = false;
+        [JsonIgnore]
+        public int port;
     }
 }
