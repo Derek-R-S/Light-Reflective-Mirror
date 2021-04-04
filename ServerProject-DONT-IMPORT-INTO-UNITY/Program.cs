@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using LightReflectiveMirror.Endpoints;
 using Mirror;
@@ -25,7 +28,14 @@ namespace LightReflectiveMirror
         private DateTime _startupTime;
 
         private List<int> _currentConnections = new List<int>();
+        public Dictionary<int, IPEndPoint> NATConnections = new Dictionary<int, IPEndPoint>();
+        private BiDictionary<int, string> _pendingNATPunches = new BiDictionary<int, string>();
         private int _currentHeartbeatTimer = 0;
+
+        private byte[] _NATRequest = new byte[500];
+        private int _NATRequestPosition = 0;
+
+        private UdpClient _punchServer;
 
         private const string CONFIG_PATH = "config.json";
 
@@ -52,33 +62,34 @@ namespace LightReflectiveMirror
             else
             {
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
+                WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
                 { 
                     var asm = Assembly.LoadFile(Directory.GetCurrentDirectory() + @"\" + conf.TransportDLL);
-                    WriteLogMessage($"Loaded Assembly: {asm.FullName}", ConsoleColor.Green);
+                    WriteLogMessage($"OK", ConsoleColor.Green);
+
+                    WriteLogMessage("\nLoading Transport Class... ", ConsoleColor.White, true);
 
                     transport = asm.CreateInstance(conf.TransportClass) as Transport;
 
                     if (transport != null)
                     {
                         var transportClass = asm.GetType(conf.TransportClass);
+                        WriteLogMessage("OK", ConsoleColor.Green);
 
-                        WriteLogMessage($"Loaded Transport: {transportClass.Name}! Loading Methods...", ConsoleColor.Green);
+                        WriteLogMessage("\nLoading Transport Methods... ", ConsoleColor.White, true);
                         CheckMethods(transportClass);
+                        WriteLogMessage("OK", ConsoleColor.Green);
+
+                        WriteLogMessage("\nInvoking Transport Methods...");
 
                         if (_awakeMethod != null)
-                        {
                             _awakeMethod.Invoke(transport, null);
-                            WriteLogMessage("Called Awake on transport.", ConsoleColor.Yellow);
-                        }
 
                         if (_startMethod != null)
-                        {
-                            _awakeMethod.Invoke(transport, null);
-                            WriteLogMessage("Called Start on transport.", ConsoleColor.Yellow);
-                        }
+                            _startMethod.Invoke(transport, null);
 
-                        WriteLogMessage("Starting Transport...", ConsoleColor.Green);
+                        WriteLogMessage("\nStarting Transport... ", ConsoleColor.White, true);
 
                         transport.OnServerError = (clientID, error) => 
                         {
@@ -90,6 +101,16 @@ namespace LightReflectiveMirror
                             WriteLogMessage($"Transport Connected, Client: {clientID}", ConsoleColor.Cyan);
                             _currentConnections.Add(clientID);
                             _relay.ClientConnected(clientID);
+
+                            if (conf.EnableNATPunchtroughServer)
+                            {
+                                string natID = Guid.NewGuid().ToString();
+                                _pendingNATPunches.Add(clientID, natID);
+                                _NATRequestPosition = 0;
+                                _NATRequest.WriteByte(ref _NATRequestPosition, (byte)OpCodes.RequestNATConnection);
+                                _NATRequest.WriteString(ref _NATRequestPosition, natID);
+                                transport.ServerSend(clientID, 0, new ArraySegment<byte>(_NATRequest, 0, _NATRequestPosition));
+                            }
                         };
 
                         _relay = new RelayHandler(transport.GetMaxPacketSize(0));
@@ -99,32 +120,72 @@ namespace LightReflectiveMirror
                         {
                             _currentConnections.Remove(clientID);
                             _relay.HandleDisconnect(clientID);
+
+                            if(NATConnections.ContainsKey(clientID))
+                                NATConnections.Remove(clientID);
+
+                            if(_pendingNATPunches.TryGetByFirst(clientID, out _))
+                                _pendingNATPunches.Remove(clientID);
                         };
 
                         transport.ServerStart();
 
-                        WriteLogMessage("Transport Started!", ConsoleColor.Green);
+                        WriteLogMessage("OK", ConsoleColor.Green);
 
                         if (conf.UseEndpoint)
                         {
+                            WriteLogMessage("\nStarting Endpoint Service... ", ConsoleColor.White, true);
                             var endpoint = new EndpointServer();
 
                             if (endpoint.Start(conf.EndpointPort))
-                                WriteLogMessage("Endpoint Service Started!", ConsoleColor.Green);
+                            {
+                                WriteLogMessage("OK", ConsoleColor.Green);
+                            }
                             else
-                                WriteLogMessage("Endpoint failure, please run as administrator.", ConsoleColor.Red);
+                            {
+                                WriteLogMessage("FAILED\nPlease run as administrator or check if port is in use.", ConsoleColor.DarkRed);
+                            }
+                        }
+
+                        if (conf.EnableNATPunchtroughServer)
+                        {
+                            WriteLogMessage("\nStarting NatPunchthrough Socket... ", ConsoleColor.White, true);
+
+                            try
+                            {
+                                _punchServer = new UdpClient(conf.NATPunchtroughPort);
+
+                                WriteLogMessage("OK\n", ConsoleColor.Green, true);
+
+                                WriteLogMessage("\nStarting NatPunchthrough Thread... ", ConsoleColor.White, true);
+                                var natThread = new Thread(new ThreadStart(RunNATPunchLoop));
+
+                                try
+                                {
+                                    natThread.Start();
+                                }
+                                catch(Exception e)
+                                {
+                                    WriteLogMessage("FAILED\n" + e, ConsoleColor.DarkRed);
+                                }
+                            }
+                            catch(Exception e)
+                            {
+                                WriteLogMessage("FAILED\nCheck if port is in use.", ConsoleColor.DarkRed, true);
+                                Console.WriteLine(e);
+                            }
                         }
                     }
                     else
                     {
-                        WriteLogMessage("Transport Class not found! Please make sure to include namespaces.", ConsoleColor.Red);
+                        WriteLogMessage("FAILED\nClass not found, make sure to included namespaces!", ConsoleColor.DarkRed);
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
                 }
                 catch(Exception e)
                 {
-                    WriteLogMessage("Exception: " + e, ConsoleColor.Red);
+                    WriteLogMessage("FAILED\nException: " + e, ConsoleColor.DarkRed);
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
@@ -151,10 +212,55 @@ namespace LightReflectiveMirror
             }
         }
 
-        static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White)
+        void RunNATPunchLoop()
+        {
+            WriteLogMessage("OK\n", ConsoleColor.Green);
+            IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, conf.NATPunchtroughPort);
+
+            // Stock Data server sends to everyone:
+            var serverResponse = new byte[1] { 1 };
+
+            byte[] readData;
+            bool isConnectionEstablishment;
+            int pos;
+            string connectionID;
+
+            while (true)
+            {
+                readData = _punchServer.Receive(ref remoteEndpoint);
+                pos = 0;
+                try
+                {
+                    isConnectionEstablishment = readData.ReadBool(ref pos);
+
+                    if (isConnectionEstablishment)
+                    {
+                        connectionID = readData.ReadString(ref pos);
+
+                        if (_pendingNATPunches.TryGetBySecond(connectionID, out pos))
+                        {
+                            NATConnections.Add(pos, new IPEndPoint(remoteEndpoint.Address, remoteEndpoint.Port));
+                            _pendingNATPunches.Remove(pos);
+                            Console.WriteLine("Client Successfully Established Puncher Connection. " + remoteEndpoint.ToString());
+                        }
+                    }
+
+                    _punchServer.Send(serverResponse, 1, remoteEndpoint);
+                }
+                catch
+                {
+                    // ignore, packet got fucked up or something.
+                }
+            }
+        }
+
+        static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White, bool oneLine = false)
         {
             Console.ForegroundColor = color;
-            Console.WriteLine(message);
+            if (oneLine)
+                Console.Write(message);
+            else
+                Console.WriteLine(message);
         }
 
         void CheckMethods(Type type)
@@ -163,11 +269,6 @@ namespace LightReflectiveMirror
             _startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             _updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             _lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-            if (_awakeMethod != null) WriteLogMessage("'Awake' Loaded!", ConsoleColor.Yellow); 
-            if (_startMethod != null) WriteLogMessage("'Start' Loaded!", ConsoleColor.Yellow); 
-            if (_updateMethod != null) WriteLogMessage("'Update' Loaded!", ConsoleColor.Yellow);
-            if (_lateUpdateMethod != null) WriteLogMessage("'LateUpdate' Loaded!", ConsoleColor.Yellow);
         }
 
         void WriteTitle()
@@ -184,8 +285,8 @@ namespace LightReflectiveMirror
 ";
 
             string load = $"Chimp Event Listener Initializing... OK" +
-                            "\nHarambe Memorial Initializing... OK" +
-                            "\nBananas initializing... OK\n";
+                            "\nHarambe Memorial Initializing...     OK" +
+                            "\nBananas Initializing...              OK\n";
 
             WriteLogMessage(t, ConsoleColor.Green);
             WriteLogMessage(load, ConsoleColor.Cyan);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 
 namespace LightReflectiveMirror
@@ -57,7 +58,7 @@ namespace LightReflectiveMirror
                 switch (opcode)
                 {
                     case OpCodes.CreateRoom:
-                        CreateRoom(clientId, data.ReadInt(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos));
+                        CreateRoom(clientId, data.ReadInt(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadInt(ref pos));
                         break;
                     case OpCodes.RequestID:
                         SendClientID(clientId);
@@ -66,16 +67,13 @@ namespace LightReflectiveMirror
                         LeaveRoom(clientId);
                         break;
                     case OpCodes.JoinServer:
-                        JoinRoom(clientId, data.ReadInt(ref pos));
+                        JoinRoom(clientId, data.ReadInt(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos));
                         break;
                     case OpCodes.KickPlayer:
                         LeaveRoom(data.ReadInt(ref pos), clientId);
                         break;
                     case OpCodes.SendData:
                         ProcessData(clientId, data.ReadBytes(ref pos), channel, data.ReadInt(ref pos));
-                        break;
-                    case OpCodes.RequestServers:
-                        SendServerList(clientId);
                         break;
                     case OpCodes.UpdateRoomData:
                         var plyRoom = GetRoomForPlayer(clientId);
@@ -109,28 +107,6 @@ namespace LightReflectiveMirror
         }
 
         public void HandleDisconnect(int clientId) => LeaveRoom(clientId);
-
-        void SendServerList(int clientId)
-        {
-            int pos = 0;
-            var buffer = _sendBuffers.Rent(500);
-            buffer.WriteByte(ref pos, (byte)OpCodes.ServerListReponse);
-            for(int i = 0; i < rooms.Count; i++)
-            {
-                if (rooms[i].isPublic)
-                {
-                    buffer.WriteBool(ref pos, true);
-                    buffer.WriteString(ref pos, rooms[i].serverName);
-                    buffer.WriteString(ref pos, rooms[i].serverData);
-                    buffer.WriteInt(ref pos, rooms[i].serverId);
-                    buffer.WriteInt(ref pos, rooms[i].maxPlayers);
-                    buffer.WriteInt(ref pos, rooms[i].clients.Count + 1);
-                }
-            }
-            buffer.WriteBool(ref pos, false);
-            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(buffer, 0, pos));
-            _sendBuffers.Return(buffer);
-        }
 
         void ProcessData(int clientId, byte[] clientData, int channel, int sendTo = -1)
         {
@@ -184,7 +160,7 @@ namespace LightReflectiveMirror
             return null;
         }
 
-        void JoinRoom(int clientId, int serverId)
+        void JoinRoom(int clientId, int serverId, bool canDirectConnect, string localIP)
         {
             LeaveRoom(clientId);
 
@@ -197,15 +173,44 @@ namespace LightReflectiveMirror
                         rooms[i].clients.Add(clientId);
 
                         int sendJoinPos = 0;
-                        byte[] sendJoinBuffer = _sendBuffers.Rent(5);
+                        byte[] sendJoinBuffer = _sendBuffers.Rent(500);
 
-                        sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.ServerJoined);
-                        sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
+                        if (canDirectConnect && Program.instance.NATConnections.ContainsKey(clientId))
+                        {
+                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
 
-                        Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                        Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                        _sendBuffers.Return(sendJoinBuffer);
-                        return;
+                            if (Program.instance.NATConnections[clientId].Address.Equals(rooms[i].hostIP.Address))
+                                sendJoinBuffer.WriteString(ref sendJoinPos, rooms[i].hostLocalIP == localIP ? "127.0.0.1" : rooms[i].hostLocalIP);
+                            else
+                                sendJoinBuffer.WriteString(ref sendJoinPos, rooms[i].hostIP.Address.ToString());
+
+                            sendJoinBuffer.WriteInt(ref sendJoinPos, rooms[i].useNATPunch ? rooms[i].hostIP.Port : rooms[i].port);
+
+                            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+
+                            sendJoinPos = 0;
+                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
+                            Console.WriteLine(Program.instance.NATConnections[clientId].Address.ToString());
+                            sendJoinBuffer.WriteString(ref sendJoinPos, Program.instance.NATConnections[clientId].Address.ToString());
+                            sendJoinBuffer.WriteInt(ref sendJoinPos, Program.instance.NATConnections[clientId].Port);
+
+                            Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+
+                            _sendBuffers.Return(sendJoinBuffer);
+
+                            return;
+                        }
+                        else
+                        {
+
+                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.ServerJoined);
+                            sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
+
+                            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                            Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                            _sendBuffers.Return(sendJoinBuffer);
+                            return;
+                        }
                     }
                 }
             }
@@ -220,9 +225,12 @@ namespace LightReflectiveMirror
             _sendBuffers.Return(sendBuffer);
         }
 
-        void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData)
+        void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port)
         {
             LeaveRoom(clientId);
+
+            IPEndPoint hostIP = null;
+            Program.instance.NATConnections.TryGetValue(clientId, out hostIP);
 
             Room room = new Room
             {
@@ -232,8 +240,12 @@ namespace LightReflectiveMirror
                 isPublic = isPublic,
                 serverData = serverData,
                 clients = new List<int>(),
-
-                serverId = GetRandomServerID()
+                serverId = GetRandomServerID(),
+                hostIP = hostIP,
+                hostLocalIP = hostLocalIP,
+                supportsDirectConnect = hostIP == null ? false : useDirectConnect,
+                port = port,
+                useNATPunch = useNatPunch
             };
 
             rooms.Add(room);
@@ -322,6 +334,7 @@ namespace LightReflectiveMirror
     public enum OpCodes
     {
         Default = 0, RequestID = 1, JoinServer = 2, SendData = 3, GetID = 4, ServerJoined = 5, GetData = 6, CreateRoom = 7, ServerLeft = 8, PlayerDisconnected = 9, RoomCreated = 10,
-        LeaveRoom = 11, KickPlayer = 12, AuthenticationRequest = 13, AuthenticationResponse = 14, RequestServers = 15, ServerListReponse = 16, Authenticated = 17, UpdateRoomData = 18, ServerConnectionData = 19
+        LeaveRoom = 11, KickPlayer = 12, AuthenticationRequest = 13, AuthenticationResponse = 14, Authenticated = 17, UpdateRoomData = 18, ServerConnectionData = 19, RequestNATConnection = 20,
+        DirectConnectIP = 21
     }
 }

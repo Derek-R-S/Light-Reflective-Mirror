@@ -1,6 +1,11 @@
 ﻿using Grapevine;
+using LightReflectiveMirror.Compression;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.Endpoints
@@ -17,18 +22,20 @@ namespace LightReflectiveMirror.Endpoints
     [RestResource]
     public class Endpoint
     {
+        private List<Room> _rooms { get => Program.instance.GetRooms(); }
+
+        private RelayStats _stats { get => new RelayStats 
+        {
+            ConnectedClients = Program.instance.GetConnections(),
+            RoomCount = Program.instance.GetRooms().Count,
+            PublicRoomCount = Program.instance.GetPublicRoomCount(),
+            Uptime = Program.instance.GetUptime()
+        }; }
+
         [RestRoute("Get", "/api/stats")]
         public async Task Stats(IHttpContext context)
         {
-            RelayStats stats = new RelayStats
-            {
-                ConnectedClients = Program.instance.GetConnections(),
-                RoomCount = Program.instance.GetRooms().Count,
-                PublicRoomCount = Program.instance.GetPublicRoomCount(),
-                Uptime = Program.instance.GetUptime()
-            };
-
-            string json = JsonConvert.SerializeObject(stats, Formatting.Indented);
+            string json = JsonConvert.SerializeObject(_stats, Formatting.Indented);
             await context.Response.SendResponseAsync(json);
         }
 
@@ -37,38 +44,48 @@ namespace LightReflectiveMirror.Endpoints
         {
             if (Program.conf.EndpointServerList)
             {
-                string json = JsonConvert.SerializeObject(Program.instance.GetRooms(), Formatting.Indented);
+                string json = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
                 await context.Response.SendResponseAsync(json);
             }
             else
+                await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
+        }
+
+        [RestRoute("Get", "/api/compressed/servers")]
+        public async Task ServerListCompressed(IHttpContext context)
+        {
+            if (Program.conf.EndpointServerList)
             {
-                await context.Response.SendResponseAsync("Access Denied");
+                string json = JsonConvert.SerializeObject(_rooms);
+                await context.Response.SendResponseAsync(json.Compress());
             }
+            else
+                await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
         }
     }
 
     public class EndpointServer
     {
-        public bool Start(ushort port = 6969)
+        public bool Start(ushort port = 8080)
         {
             try
             {
-                var server = RestServerBuilder.UseDefaults().Build();
-                server.Prefixes.Remove($"http://localhost:{1234}/");
-                server.Prefixes.Add($"http://*:{port}/");
-                server.Router.Options.SendExceptionMessages = false;
+                var config = new ConfigurationBuilder()
+                .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .Build();
 
-                server.AfterStarting += (s) =>
+                var server = new RestServerBuilder(new ServiceCollection(), config, 
+                (services) =>
                 {
-                    string startup = @"
-********************************************************************************
-* Endpoint Server listening on "+$"{string.Join(", ", server.Prefixes)}" + @"
-* Be sure to Port Forward! :^)
-********************************************************************************
-";
-                    Console.WriteLine(startup);
-                };
+                    services.AddLogging(configure => configure.AddConsole());
+                    services.Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.None);
+                }, (server) =>
+                {
+                    server.Prefixes.Add($"http://*:{port}/");
+                }).Build();
 
+                server.Router.Options.SendExceptionMessages = false;
                 server.Start();
 
                 return true;
