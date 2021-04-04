@@ -1,9 +1,11 @@
 ﻿using Grapevine;
+using LightReflectiveMirror.Compression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.Endpoints
@@ -20,18 +22,20 @@ namespace LightReflectiveMirror.Endpoints
     [RestResource]
     public class Endpoint
     {
+        private List<Room> _rooms { get => Program.instance.GetRooms(); }
+
+        private RelayStats _stats { get => new RelayStats 
+        {
+            ConnectedClients = Program.instance.GetConnections(),
+            RoomCount = Program.instance.GetRooms().Count,
+            PublicRoomCount = Program.instance.GetPublicRoomCount(),
+            Uptime = Program.instance.GetUptime()
+        }; }
+
         [RestRoute("Get", "/api/stats")]
         public async Task Stats(IHttpContext context)
         {
-            RelayStats stats = new RelayStats
-            {
-                ConnectedClients = Program.instance.GetConnections(),
-                RoomCount = Program.instance.GetRooms().Count,
-                PublicRoomCount = Program.instance.GetPublicRoomCount(),
-                Uptime = Program.instance.GetUptime()
-            };
-
-            string json = JsonConvert.SerializeObject(stats, Formatting.Indented);
+            string json = JsonConvert.SerializeObject(_stats, Formatting.Indented);
             await context.Response.SendResponseAsync(json);
         }
 
@@ -40,13 +44,23 @@ namespace LightReflectiveMirror.Endpoints
         {
             if (Program.conf.EndpointServerList)
             {
-                string json = JsonConvert.SerializeObject(Program.instance.GetRooms(), Formatting.Indented);
+                string json = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
                 await context.Response.SendResponseAsync(json);
             }
             else
+                await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
+        }
+
+        [RestRoute("Get", "/api/compressed/servers")]
+        public async Task ServerListCompressed(IHttpContext context)
+        {
+            if (Program.conf.EndpointServerList)
             {
-                await context.Response.SendResponseAsync("Access Denied");
+                string json = JsonConvert.SerializeObject(_rooms);
+                await context.Response.SendResponseAsync(json.Compress());
             }
+            else
+                await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
         }
     }
 
@@ -61,20 +75,17 @@ namespace LightReflectiveMirror.Endpoints
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();
 
-                Action<IServiceCollection> configServices = (services) =>
+                var server = new RestServerBuilder(new ServiceCollection(), config, 
+                (services) =>
                 {
                     services.AddLogging(configure => configure.AddConsole());
                     services.Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.None);
-                };
-
-                Action<IRestServer> configServer = (server) =>
+                }, (server) =>
                 {
                     server.Prefixes.Add($"http://*:{port}/");
-                };
+                }).Build();
 
-                var server = new RestServerBuilder(new ServiceCollection(), config, configServices, configServer).Build();
                 server.Router.Options.SendExceptionMessages = false;
-
                 server.Start();
 
                 return true;

@@ -163,15 +163,16 @@ namespace LightReflectiveMirror
                                 try
                                 {
                                     natThread.Start();
-                                }catch(Exception err)
+                                }
+                                catch(Exception e)
                                 {
-                                    WriteLogMessage("FAILED\n" + err, ConsoleColor.DarkRed);
+                                    WriteLogMessage("FAILED\n" + e, ConsoleColor.DarkRed);
                                 }
                             }
-                            catch(Exception error)
+                            catch(Exception e)
                             {
                                 WriteLogMessage("FAILED\nCheck if port is in use.", ConsoleColor.DarkRed, true);
-                                Console.WriteLine(error);
+                                Console.WriteLine(e);
                             }
                         }
                     }
@@ -285,7 +286,7 @@ namespace LightReflectiveMirror
 
             string load = $"Chimp Event Listener Initializing... OK" +
                             "\nHarambe Memorial Initializing...     OK" +
-                            "\nBananas initializing...              OK\n";
+                            "\nBananas Initializing...              OK\n";
 
             WriteLogMessage(t, ConsoleColor.Green);
             WriteLogMessage(load, ConsoleColor.Cyan);
