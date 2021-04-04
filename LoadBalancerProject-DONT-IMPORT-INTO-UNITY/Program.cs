@@ -12,7 +12,7 @@ namespace LightReflectiveMirror.LoadBalancing
     {
         /// <summary>
         /// Keeps track of all available relays.
-        /// Key is server address, value is CCU.
+        /// Key is server address, value is CCU/Info.
         /// </summary>
         public Dictionary<string, RelayStats> availableRelayServers = new();
 
