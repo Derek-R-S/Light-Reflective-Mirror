@@ -60,27 +60,25 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             var stats = await ManualPingServer(serverIP);
 
-            if(stats.PublicRoomCount != -1)
-                availableRelayServers.Add(serverIP, stats);
+            if(stats.HasValue)
+                availableRelayServers.Add(serverIP, stats.Value);
         }
 
-        async Task<RelayStats> ManualPingServer(string serverIP) 
+        async Task<RelayStats?> ManualPingServer(string serverIP) 
         {
-            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("http://"+serverIP);
-
-            try
+            using (WebClient wc = new WebClient())
             {
-                WebResponse response = await myRequest.GetResponseAsync();
-                var reader = new StreamReader(response.GetResponseStream());
+                try
+                {
+                    string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}{API_PATH}");
 
-                return JsonConvert.DeserializeObject<RelayStats>(reader.ReadToEnd());
-            }
-            catch (WebException ex)
-            {
-                // server doesnt exist anymore probably
-                // do more shit here
-                
-                return new RelayStats { PublicRoomCount = -1 };
+                    return JsonConvert.DeserializeObject<RelayStats>(receivedStats);
+                }
+                catch(Exception e)
+                {
+                    // Server failed to respond to stats, dont add to load balancer.
+                    return null;
+                }
             }
         }
 
@@ -90,28 +88,35 @@ namespace LightReflectiveMirror.LoadBalancing
             {
                 WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
 
-                foreach (var server in availableRelayServers)
+                // Create a new list so we can modify the collection in our loop.
+                var keys = new List<string>(availableRelayServers.Keys);
+
+                for(int i = 0; i < keys.Count; i++)
                 {
-                    string url = server + API_PATH;
-                    HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(url);
+                    string url = $"http://{keys[i]}{API_PATH}";
 
-                    try 
+                    using (WebClient wc = new WebClient())
                     {
-                        WebResponse response = await myRequest.GetResponseAsync();
+                        try
+                        {
+                            var serverStats = wc.DownloadString(url);
+                            Console.WriteLine(serverStats);
 
-                        var reader = new StreamReader(response.GetResponseStream());
+                            WriteLogMessage("Server " + keys[i] + " still exists, keeping in collection.");
 
-                        WriteLogMessage("Server " + server.Key + " still exists, keeping in collection.");
-                        availableRelayServers.Remove(server.Key);
-                        availableRelayServers.Add(server.Key, JsonConvert.DeserializeObject<RelayStats>(reader.ReadToEnd()));
-                    }
-                    catch (Exception ex)
-                    {
-                        // server doesnt exist anymore probably
-                        // do more shit here
+                            if (availableRelayServers.ContainsKey(keys[i]))
+                                availableRelayServers[keys[i]] = JsonConvert.DeserializeObject<RelayStats>(serverStats);
+                            else
+                                availableRelayServers.Add(keys[i], JsonConvert.DeserializeObject<RelayStats>(serverStats));
 
-                        WriteLogMessage("Server " + server.Key + " does not exist anymore, removing", ConsoleColor.Red);
-                        availableRelayServers.Remove(server.Key);
+                        }
+                        catch (Exception ex)
+                        {
+                            // server doesnt exist anymore probably
+                            // do more shit here
+                            WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
+                            availableRelayServers.Remove(keys[i]);
+                        }
                     }
                 }
 
@@ -122,13 +127,24 @@ namespace LightReflectiveMirror.LoadBalancing
         void WriteTitle()
         {
             string t = @"  
-                           w  c(..)o   (
-  _       _____   __  __    \__(-)    __)
- | |     |  __ \ |  \/  |       /\   (
- | |     | |__) || \  / |      /(_)___)
- | |     |  _  / | |\/| |      w /|
- | |____ | | \ \ | |  | |       | \
- |______||_|  \_\|_|  |_|      m  m copyright monkesoft 2021
+  _        _____    __  __                                                
+ | |      |  __ \  |  \/  |                                               
+ | |      | |__) | | \  / |                                               
+ | |      |  _  /  | |\/| |                                               
+ | |____  | | \ \  | |  | |                           w  c(..)o   (                    
+ |______| |_|  \_\ |_|  |_|                            \__(-)    __)                                                                                                                                                               
+  _         ____               _____                      /\   (              
+ | |       / __ \      /\     |  __ \                    /(_)___)             
+ | |      | |  | |    /  \    | |  | |                   w /|                
+ | |      | |  | |   / /\ \   | |  | |                    | \                
+ | |____  | |__| |  / ____ \  | |__| |                   m  m copyright monkesoft 2021                
+ |______|  \____/  /_/    \_\ |_____/                                                                                                                                             
+  ____               _                   _   _    _____   ______   _____  
+ |  _ \      /\     | |          /\     | \ | |  / ____| |  ____| |  __ \ 
+ | |_) |    /  \    | |         /  \    |  \| | | |      | |__    | |__) |
+ |  _ <    / /\ \   | |        / /\ \   | . ` | | |      |  __|   |  _  / 
+ | |_) |  / ____ \  | |____   / ____ \  | |\  | | |____  | |____  | | \ \ 
+ |____/  /_/    \_\ |______| /_/    \_\ |_| \_|  \_____| |______| |_|  \_\
 ";
 
             string load = $"Chimp Event Listener Initializing... OK" +

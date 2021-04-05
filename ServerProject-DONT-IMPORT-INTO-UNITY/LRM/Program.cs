@@ -230,13 +230,13 @@ namespace LightReflectiveMirror
                 HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(uri);
 
                 myRequest.Headers.Add("Auth", "AuthKey");
-                myRequest.Headers.Add("Address", externalip + ":" + port);
+                myRequest.Headers.Add("Port", port);
 
                 WebResponse myResponse = await myRequest.GetResponseAsync();
 
                 return true;
             }
-            catch (Exception e)
+            catch
             {
                 // error adding or load balancer unavailable
                 WriteLogMessage("Error registering", ConsoleColor.Red);
