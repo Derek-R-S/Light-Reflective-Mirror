@@ -16,14 +16,17 @@ namespace LightReflectiveMirror.LoadBalancing
         public async Task ReceiveAuthKey(IHttpContext context)
         {
             var req = context.Request.Headers;
+            string receivedAuthKey = req[0];
+            string address = req[1];
+
+            Console.WriteLine("Received auth req [" + req[0] + "] == [" + Program.conf.AuthKey+"]");
 
             // if server is authenticated
-            if (req[0] == Program.conf.AuthKey)
+            if (receivedAuthKey == Program.conf.AuthKey)
             {
-                var address = context.Request.RemoteEndPoint.Address.ToString();
-                await Program.instance.AddServer(address);
-
                 Console.WriteLine("Server accepted: " + address);
+
+                await Program.instance.AddServer(address);
 
                 await context.Response.SendResponseAsync(HttpStatusCode.Ok);
             }
@@ -40,6 +43,8 @@ namespace LightReflectiveMirror.LoadBalancing
         [RestRoute("Get", "/api/join/")]
         public async Task JoinRelay(IHttpContext context)
         {
+            // need to copy over in order to avoid
+            // collection being modified while iterating.
             var servers = Program.instance.availableRelayServers.ToList();
 
             if(servers.Count == 0)
@@ -48,8 +53,6 @@ namespace LightReflectiveMirror.LoadBalancing
                 return;
             }
 
-            // need to copy over in order to avoid
-            // collection being modified while iterating.
             KeyValuePair<string, RelayStats> lowest = new("Dummy", new RelayStats { ConnectedClients = int.MaxValue });
 
             for (int i = 0; i < servers.Count; i++)
@@ -68,7 +71,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
     public class EndpointServer
     {
-        public bool Start(ushort port = 8080)
+        public bool Start(ushort port = 7070)
         {
             try
             {

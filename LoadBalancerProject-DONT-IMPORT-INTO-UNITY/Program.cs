@@ -66,8 +66,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
         async Task<RelayStats> ManualPingServer(string serverIP) 
         {
-            string url = serverIP + API_PATH;
-            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(url);
+            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("http://"+serverIP);
 
             try
             {
@@ -76,11 +75,11 @@ namespace LightReflectiveMirror.LoadBalancing
 
                 return JsonConvert.DeserializeObject<RelayStats>(reader.ReadToEnd());
             }
-            catch (Exception ex)
+            catch (WebException ex)
             {
                 // server doesnt exist anymore probably
                 // do more shit here
-
+                
                 return new RelayStats { PublicRoomCount = -1 };
             }
         }
@@ -89,6 +88,8 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             while (true)
             {
+                WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
+
                 foreach (var server in availableRelayServers)
                 {
                     string url = server + API_PATH;
@@ -100,6 +101,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
                         var reader = new StreamReader(response.GetResponseStream());
 
+                        WriteLogMessage("Server " + server.Key + " still exists, keeping in collection.");
                         availableRelayServers.Remove(server.Key);
                         availableRelayServers.Add(server.Key, JsonConvert.DeserializeObject<RelayStats>(reader.ReadToEnd()));
                     }
@@ -108,6 +110,7 @@ namespace LightReflectiveMirror.LoadBalancing
                         // server doesnt exist anymore probably
                         // do more shit here
 
+                        WriteLogMessage("Server " + server.Key + " does not exist anymore, removing", ConsoleColor.Red);
                         availableRelayServers.Remove(server.Key);
                     }
                 }
