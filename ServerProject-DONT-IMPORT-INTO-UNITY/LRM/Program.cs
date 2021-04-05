@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,6 +32,7 @@ namespace LightReflectiveMirror
         private BiDictionary<int, string> _pendingNATPunches = new BiDictionary<int, string>();
         private int _currentHeartbeatTimer = 0;
 
+        private string _externalIp;
         private byte[] _NATRequest = new byte[500];
         private int _NATRequestPosition = 0;
 
@@ -62,6 +63,7 @@ namespace LightReflectiveMirror
             else
             {
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
+                _externalIp = await GetExternalIp();
 
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
@@ -218,22 +220,23 @@ namespace LightReflectiveMirror
 
         async Task<bool> RegisterSelfToLoadBalancer()
         {
-            // replace hard coded value for config value later
-            var url = "http://www.localhost:7070/api/auth";
-            string externalip = "127.0.0.1";//new WebClient().DownloadString("https://ipv4.icanhazip.com/");
-            string port = conf.EndpointPort.ToString();
-            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(url);
-
-            myRequest.Headers.Add("Auth", "AuthKey");
-            myRequest.Headers.Add("Address", $"{externalip}:" + port + "/api/stats");
 
             try
             {
+                // replace hard coded value for config value later
+                var uri = new Uri("http://localhost:7070/api/auth");
+                string externalip = _externalIp.Normalize().Trim();
+                string port = conf.EndpointPort.ToString();
+                HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(uri);
+
+                myRequest.Headers.Add("Auth", "AuthKey");
+                myRequest.Headers.Add("Address", externalip + ":" + port);
+
                 WebResponse myResponse = await myRequest.GetResponseAsync();
 
                 return true;
             }
-            catch
+            catch (Exception e)
             {
                 // error adding or load balancer unavailable
                 WriteLogMessage("Error registering", ConsoleColor.Red);
@@ -242,10 +245,21 @@ namespace LightReflectiveMirror
 
         }
 
+        async Task<string> GetExternalIp()
+        {
+            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("https://ipv4.icanhazip.com/");
+            WebResponse myResponse = await myRequest.GetResponseAsync();
+
+            Stream stream = myResponse.GetResponseStream();
+            var ip = new StreamReader(stream).ReadToEnd();
+
+            return ip;
+        }
+
         void RunNATPunchLoop()
         {
             WriteLogMessage("OK\n", ConsoleColor.Green);
-            IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, conf.NATPunchtroughPort);
+            IPEndPoint remoteEndpoint = new(IPAddress.Any, conf.NATPunchtroughPort);
 
             // Stock Data server sends to everyone:
             var serverResponse = new byte[1] { 1 };
