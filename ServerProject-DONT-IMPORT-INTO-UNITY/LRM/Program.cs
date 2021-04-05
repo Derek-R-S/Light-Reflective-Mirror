@@ -32,7 +32,6 @@ namespace LightReflectiveMirror
         private BiDictionary<int, string> _pendingNATPunches = new BiDictionary<int, string>();
         private int _currentHeartbeatTimer = 0;
 
-        private string _externalIp;
         private byte[] _NATRequest = new byte[500];
         private int _NATRequestPosition = 0;
 
@@ -63,7 +62,6 @@ namespace LightReflectiveMirror
             else
             {
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
-                _externalIp = await GetExternalIp();
 
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
@@ -193,7 +191,8 @@ namespace LightReflectiveMirror
                     Environment.Exit(0);
                 }
 
-                await RegisterSelfToLoadBalancer();
+                if(conf.UseLoadBalancer)
+                    await RegisterSelfToLoadBalancer();
             }
 
             while (true)
@@ -217,43 +216,31 @@ namespace LightReflectiveMirror
             }
         }
 
-
-        async Task<bool> RegisterSelfToLoadBalancer()
+        private async Task<bool> RegisterSelfToLoadBalancer()
         {
-
             try
             {
                 // replace hard coded value for config value later
-                var uri = new Uri("http://localhost:7070/api/auth");
-                string externalip = _externalIp.Normalize().Trim();
-                string port = conf.EndpointPort.ToString();
-                HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(uri);
+                var uri = new Uri($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/auth");
+                string endpointPort = conf.EndpointPort.ToString();
+                string gamePort = 7777.ToString();
+                HttpWebRequest authReq = (HttpWebRequest)WebRequest.Create(uri);
 
-                myRequest.Headers.Add("Auth", "AuthKey");
-                myRequest.Headers.Add("Port", port);
+                authReq.Headers.Add("Auth", conf.LoadBalancerAuthKey);
+                authReq.Headers.Add("EndpointPort", endpointPort);
+                authReq.Headers.Add("GamePort", gamePort);
 
-                WebResponse myResponse = await myRequest.GetResponseAsync();
+                var res = await authReq.GetResponseAsync();
 
                 return true;
             }
             catch
             {
                 // error adding or load balancer unavailable
-                WriteLogMessage("Error registering", ConsoleColor.Red);
+                WriteLogMessage("Error registering - Load Balancer probably timed out.", ConsoleColor.Red);
                 return false;
             }
 
-        }
-
-        async Task<string> GetExternalIp()
-        {
-            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("https://ipv4.icanhazip.com/");
-            WebResponse myResponse = await myRequest.GetResponseAsync();
-
-            Stream stream = myResponse.GetResponseStream();
-            var ip = new StreamReader(stream).ReadToEnd();
-
-            return ip;
         }
 
         void RunNATPunchLoop()

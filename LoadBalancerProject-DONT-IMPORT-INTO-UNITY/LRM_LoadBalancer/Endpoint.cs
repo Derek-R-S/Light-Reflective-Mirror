@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,25 +13,35 @@ using HttpStatusCode = Grapevine.HttpStatusCode;
 
 namespace LightReflectiveMirror.LoadBalancing
 {
+
     [RestResource]
     public class Endpoint
     {
+        /// <summary>
+        /// Sent from an LRM server node
+        /// adds it to the list if authenticated.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         [RestRoute("Get", "/api/auth")]
         public async Task ReceiveAuthKey(IHttpContext context)
         {
             var req = context.Request;
             string receivedAuthKey = req.Headers["Auth"];
-            string port = req.Headers["Port"];
+            string endpointPort = req.Headers["EndpointPort"];
+            string gamePort = req.Headers["GamePort"];
+
             string address = context.Request.RemoteEndPoint.Address.ToString();
 
             Console.WriteLine("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey+"]");
 
             // if server is authenticated
-            if (receivedAuthKey != null && address != null && port != null && receivedAuthKey == Program.conf.AuthKey)
+            if (receivedAuthKey != null && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
             {
-                Console.WriteLine($"Server accepted: {address}:{port}");
-
-                await Program.instance.AddServer($"{address}:{port}");
+                Console.WriteLine($"Server accepted: {address}:{gamePort}");
+                var _gamePort = Convert.ToUInt16(gamePort);
+                var _endpointPort = Convert.ToUInt16(endpointPort);
+                await Program.instance.AddServer(address, _gamePort, _endpointPort);
 
                 await context.Response.SendResponseAsync(HttpStatusCode.Ok);
             }
@@ -57,7 +68,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 return;
             }
 
-            KeyValuePair<string, RelayStats> lowest = new("Dummy", new RelayStats { ConnectedClients = int.MaxValue });
+            KeyValuePair<RelayAddress, RelayStats> lowest = new(new RelayAddress { Address = "Dummy" }, new RelayStats { ConnectedClients = int.MaxValue });
 
             for (int i = 0; i < servers.Count; i++)
             {
@@ -69,7 +80,16 @@ namespace LightReflectiveMirror.LoadBalancing
 
             // respond with the server ip
             // if the string is still dummy then theres no servers
-            await context.Response.SendResponseAsync(lowest.Key != "Dummy" ? lowest.Key : HttpStatusCode.InternalServerError);
+            if (lowest.Key.Address != "Dummy")
+            {
+                // ping server to ensure its online.
+                await Program.instance.ManualPingServer(lowest.Key.Address, lowest.Key.Port);
+                await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
+            }
+            else
+            {
+                await context.Response.SendResponseAsync(HttpStatusCode.InternalServerError);
+            }
         }
     }
 

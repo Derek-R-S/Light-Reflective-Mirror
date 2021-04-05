@@ -23,18 +23,27 @@ namespace LightReflectiveMirror
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
         public UnityEvent diconnectedFromRelay;
+
         [Header("NAT Punchthrough")]
         [Help("NAT Punchthrough will require the Direct Connect module attached.")]
         public bool useNATPunch = true;
         public ushort NATPunchtroughPort = 7776;
+
+        [Header("Load Balancer")]
+        public bool useLoadBalancer = false;
+        public ushort loadBalancerPort = 7070;
+        public string loadBalancerAddress = "127.0.0.1";
+
         [Header("Server Hosting Data")]
         public string serverName = "My awesome server!";
         public string extraServerData = "Map 1";
         public int maxServerPlayers = 10;
         public bool isPublicServer = true;
+
         [Header("Server List")]
         public UnityEvent serverListUpdated;
         public List<RelayServerInfo> relayServerList { private set; get; } = new List<RelayServerInfo>();
+
         [Header("Server Information")]
         public int serverId = -1;
 
@@ -58,7 +67,7 @@ namespace LightReflectiveMirror
         private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy>();
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
         private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
-        
+
         public override bool ClientConnected() => _isClient;
         private void OnConnectedToRelay() => _connectedToRelay = true;
         public bool IsAuthenticated() => _isAuthenticated;
@@ -66,8 +75,8 @@ namespace LightReflectiveMirror
         public override bool Available() => _connectedToRelay;
         public override void ClientConnect(Uri uri) => ClientConnect(uri.Host);
         public override int GetMaxPacketSize(int channelId = 0) => clientToServerTransport.GetMaxPacketSize(channelId);
-        
-        public override string ServerGetClientAddress(int connectionId) 
+
+        public override string ServerGetClientAddress(int connectionId)
         {
             if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
                 return relayId.ToString();
@@ -110,7 +119,7 @@ namespace LightReflectiveMirror
             {
                 if (_isServer)
                 {
-                    if(_serverProxies.TryGetByFirst(newClientEP, out SocketProxy foundProxy))
+                    if (_serverProxies.TryGetByFirst(newClientEP, out SocketProxy foundProxy))
                     {
                         if (data.Length > 2)
                             foundProxy.RelayData(data, data.Length);
@@ -124,7 +133,7 @@ namespace LightReflectiveMirror
 
                 if (_isClient)
                 {
-                    if(_clientProxy == null)
+                    if (_clientProxy == null)
                     {
                         _clientProxy = new SocketProxy(_NATIP.Port - 1);
                         _clientProxy.dataReceived += ClientProcessProxyData;
@@ -162,7 +171,7 @@ namespace LightReflectiveMirror
 
             _directConnectModule = GetComponent<LRMDirectConnectModule>();
 
-            if(_directConnectModule != null)
+            if (_directConnectModule != null)
             {
                 if (useNATPunch && !_directConnectModule.SupportsNATPunch())
                 {
@@ -199,15 +208,86 @@ namespace LightReflectiveMirror
 
         public void ConnectToRelay()
         {
-            if (!_connectedToRelay)
+            if (!useLoadBalancer)
             {
-                _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
-
-                clientToServerTransport.ClientConnect(serverIP);
+                if (!_connectedToRelay)
+                {
+                    Connect(serverIP);
+                }
+                else
+                {
+                    Debug.LogWarning("LRM | Already connected to relay!");
+                }
             }
             else
             {
-                Debug.Log("Already connected to relay!");
+                if (!_connectedToRelay)
+                {
+                    StartCoroutine(RelayConnect());
+                }
+                else
+                {
+                    Debug.LogWarning("LRM | Already connected to relay!");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Connects to the desired relay
+        /// </summary>
+        /// <param name="serverIP"></param>
+        private void Connect(string serverIP, ushort port = 7777)
+        {
+            // need to implement custom port
+            if (clientToServerTransport is LightReflectiveMirrorTransport)
+                throw new Exception("LRM | Client to Server Transport cannot be LRM.");
+
+            if (clientToServerTransport is kcp2k.KcpTransport kcp)
+            {
+                kcp.Port = port;
+            }
+
+            _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
+            clientToServerTransport.ClientConnect(serverIP);
+        }
+
+        IEnumerator RelayConnect()
+        {
+            string url = $"http://{loadBalancerAddress}:{loadBalancerPort}/api/join/";
+
+            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+            {
+                // Request and wait for the desired page.
+                yield return webRequest.SendWebRequest();
+                var result = webRequest.downloadHandler.text;
+#if UNITY_2020_1_OR_NEWER
+                switch (webRequest.result)
+                {
+                    case UnityWebRequest.Result.ConnectionError:
+                    case UnityWebRequest.Result.DataProcessingError:
+                    case UnityWebRequest.Result.ProtocolError:
+                        Debug.LogWarning("LRM | Network Error while getting a relay to join from Load Balancer.");
+                        break;
+
+                    case UnityWebRequest.Result.Success:
+                        var parsedAddress = JsonConvert.DeserializeObject<RelayAddress>(result);
+                        Connect(parsedAddress.Address, parsedAddress.Port);
+                        endpointServerPort = parsedAddress.EndpointPort;
+                        break;
+                }
+#else
+                if (webRequest.isNetworkError || webRequest.isHttpError)
+                {
+                    Debug.LogWarning("LRM | Network Error while getting a relay to join from Load Balancer.");
+                }
+                else
+                {
+                    // join here
+                    var parsedAddress = JsonConvert.DeserializeObject<RelayAddress>(result);
+                    Connect(parsedAddress.Address, parsedAddress.Port);
+                    endpointServerPort = parsedAddress.EndpointPort;
+                }
+#endif
             }
         }
 
@@ -274,7 +354,7 @@ namespace LightReflectiveMirror
 
                         if (_isServer)
                         {
-                            if(_connectedRelayClients.TryGetByFirst(data.ReadInt(ref pos), out int clientID))
+                            if (_connectedRelayClients.TryGetByFirst(data.ReadInt(ref pos), out int clientID))
                                 OnServerDataReceived?.Invoke(clientID, new ArraySegment<byte>(recvData), channel);
                         }
 
@@ -294,7 +374,7 @@ namespace LightReflectiveMirror
                             int user = data.ReadInt(ref pos);
                             if (_connectedRelayClients.TryGetByFirst(user, out int clientID))
                             {
-                                OnServerDisconnected?.Invoke(_connectedRelayClients.GetByFirst(clientID));
+                                OnServerDisconnected?.Invoke(clientID);
                                 _connectedRelayClients.Remove(user);
                             }
                         }
@@ -358,19 +438,19 @@ namespace LightReflectiveMirror
                             initalData.WriteString(ref sendPos, data.ReadString(ref pos));
 
                             // Send 3 to lower chance of it being dropped or corrupted when received on server.
-                            _NATPuncher.Send(initalData, sendPos,_relayPuncherIP);
-                            _NATPuncher.Send(initalData, sendPos,_relayPuncherIP);
+                            _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
+                            _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
                             _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
                             _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
                         }
                         break;
                 }
             }
-            catch(Exception e) { print(e); }
+            catch (Exception e) { print(e); }
         }
 
         IEnumerator GetServerList()
-        {  
+        {
             string uri = $"http://{serverIP}:{endpointServerPort}/api/compressed/servers";
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
@@ -529,7 +609,7 @@ namespace LightReflectiveMirror
                 return true;
             }
 
-            if(_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
+            if (_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
                 return _directConnectModule.KickClient(directId);
 
             return false;
@@ -573,7 +653,7 @@ namespace LightReflectiveMirror
 
             var keys = new List<IPEndPoint>(_serverProxies.GetAllKeys());
 
-            for(int i = 0; i < keys.Count; i++)
+            for (int i = 0; i < keys.Count; i++)
             {
                 _serverProxies.GetByFirst(keys[i]).Dispose();
                 _serverProxies.Remove(keys[i]);
@@ -748,5 +828,13 @@ namespace LightReflectiveMirror
         public int maxPlayers;
         public int serverId;
         public string serverData;
+    }
+
+    [Serializable]
+    public struct RelayAddress
+    {
+        public ushort Port;
+        public ushort EndpointPort;
+        public string Address;
     }
 }

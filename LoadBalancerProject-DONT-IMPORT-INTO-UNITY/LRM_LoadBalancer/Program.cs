@@ -14,7 +14,7 @@ namespace LightReflectiveMirror.LoadBalancing
         /// Keeps track of all available relays.
         /// Key is server address, value is CCU.
         /// </summary>
-        public Dictionary<string, RelayStats> availableRelayServers = new();
+        public Dictionary<RelayAddress, RelayStats> availableRelayServers = new();
 
         private int _pingDelay = 10000;
         const string API_PATH = "/api/stats";
@@ -56,21 +56,21 @@ namespace LightReflectiveMirror.LoadBalancing
         }
 
 
-        public async Task AddServer(string serverIP)
+        public async Task AddServer(string serverIP, ushort port, ushort endpointPort)
         {
-            var stats = await ManualPingServer(serverIP);
+            var stats = await ManualPingServer(serverIP, endpointPort);
 
             if(stats.HasValue)
-                availableRelayServers.Add(serverIP, stats.Value);
+                availableRelayServers.Add(new RelayAddress { Port = port, EndpointPort = endpointPort, Address = serverIP }, stats.Value);
         }
 
-        async Task<RelayStats?> ManualPingServer(string serverIP) 
+        public async Task<RelayStats?> ManualPingServer(string serverIP, ushort port) 
         {
             using (WebClient wc = new WebClient())
             {
                 try
                 {
-                    string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}{API_PATH}");
+                    string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}{API_PATH}");
 
                     return JsonConvert.DeserializeObject<RelayStats>(receivedStats);
                 }
@@ -89,26 +89,25 @@ namespace LightReflectiveMirror.LoadBalancing
                 WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
 
                 // Create a new list so we can modify the collection in our loop.
-                var keys = new List<string>(availableRelayServers.Keys);
+                var keys = new List<RelayAddress>(availableRelayServers.Keys);
 
                 for(int i = 0; i < keys.Count; i++)
                 {
-                    string url = $"http://{keys[i]}{API_PATH}";
+                    string url = $"http://{keys[i].Address}:{keys[i].EndpointPort}{API_PATH}";
 
                     using (WebClient wc = new WebClient())
                     {
                         try
                         {
                             var serverStats = wc.DownloadString(url);
-                            Console.WriteLine(serverStats);
+                            var deserializedData = JsonConvert.DeserializeObject<RelayStats>(serverStats);
 
-                            WriteLogMessage("Server " + keys[i] + " still exists, keeping in collection.");
+                            WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
 
                             if (availableRelayServers.ContainsKey(keys[i]))
-                                availableRelayServers[keys[i]] = JsonConvert.DeserializeObject<RelayStats>(serverStats);
+                                availableRelayServers[keys[i]] = deserializedData;
                             else
-                                availableRelayServers.Add(keys[i], JsonConvert.DeserializeObject<RelayStats>(serverStats));
-
+                                availableRelayServers.Add(keys[i], deserializedData);
                         }
                         catch (Exception ex)
                         {
@@ -174,4 +173,13 @@ namespace LightReflectiveMirror.LoadBalancing
         public int PublicRoomCount;
         public TimeSpan Uptime;
     }
+
+    [Serializable]
+    public struct RelayAddress
+    {
+        public ushort Port;
+        public ushort EndpointPort;
+        public string Address;
+    }
+
 }
