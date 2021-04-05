@@ -62,6 +62,7 @@ namespace LightReflectiveMirror
             else
             {
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
+
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
                 { 
@@ -189,6 +190,8 @@ namespace LightReflectiveMirror
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
+
+                await RegisterSelfToLoadBalancer();
             }
 
             while (true)
@@ -210,6 +213,33 @@ namespace LightReflectiveMirror
 
                 await Task.Delay(conf.UpdateLoopTime);
             }
+        }
+
+
+        async Task<bool> RegisterSelfToLoadBalancer()
+        {
+            // replace hard coded value for config value later
+            var url = "http://www.localhost:7070/api/auth";
+            string externalip = "127.0.0.1";//new WebClient().DownloadString("https://ipv4.icanhazip.com/");
+            string port = conf.EndpointPort.ToString();
+            HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            myRequest.Headers.Add("Auth", "AuthKey");
+            myRequest.Headers.Add("Address", $"{externalip}:" + port + "/api/stats");
+
+            try
+            {
+                WebResponse myResponse = await myRequest.GetResponseAsync();
+
+                return true;
+            }
+            catch
+            {
+                // error adding or load balancer unavailable
+                WriteLogMessage("Error registering", ConsoleColor.Red);
+                return false;
+            }
+
         }
 
         void RunNATPunchLoop()
