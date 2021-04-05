@@ -12,7 +12,7 @@ namespace LightReflectiveMirror.LoadBalancing
     {
         /// <summary>
         /// Keeps track of all available relays.
-        /// Key is server address, value is CCU/Info.
+        /// Key is server address, value is CCU.
         /// </summary>
         public Dictionary<string, RelayStats> availableRelayServers = new();
 
@@ -58,13 +58,13 @@ namespace LightReflectiveMirror.LoadBalancing
 
         public async Task AddServer(string serverIP)
         {
-            var stats = await InitialPingServer(serverIP);
+            var stats = await ManualPingServer(serverIP);
 
             if(stats.PublicRoomCount != -1)
                 availableRelayServers.Add(serverIP, stats);
         }
 
-        async Task<RelayStats> InitialPingServer(string serverIP) 
+        async Task<RelayStats> ManualPingServer(string serverIP) 
         {
             string url = serverIP + API_PATH;
             HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -145,14 +145,14 @@ namespace LightReflectiveMirror.LoadBalancing
                 Console.WriteLine(message);
         }
 
-        [Serializable]
-        public struct RelayStats
-        {
-            public int ConnectedClients;
-            public int RoomCount;
-            public int PublicRoomCount;
-            public TimeSpan Uptime;
-        }
+    }
 
+    [Serializable]
+    public struct RelayStats
+    {
+        public int ConnectedClients;
+        public int RoomCount;
+        public int PublicRoomCount;
+        public TimeSpan Uptime;
     }
 }

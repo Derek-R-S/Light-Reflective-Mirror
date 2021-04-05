@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.LoadBalancing
@@ -27,6 +29,40 @@ namespace LightReflectiveMirror.LoadBalancing
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
+        }
+
+        /// <summary>
+        /// Hooks into from unity side, client will call this to 
+        /// find the least populated server to join
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        [RestRoute("Get", "/api/join/")]
+        public async Task JoinRelay(IHttpContext context)
+        {
+            var servers = Program.instance.availableRelayServers.ToList();
+
+            if(servers.Count == 0)
+            {
+                await context.Response.SendResponseAsync(HttpStatusCode.ServiceUnavailable);
+                return;
+            }
+
+            // need to copy over in order to avoid
+            // collection being modified while iterating.
+            KeyValuePair<string, RelayStats> lowest = new("Dummy", new RelayStats { ConnectedClients = int.MaxValue });
+
+            for (int i = 0; i < servers.Count; i++)
+            {
+                if (servers[i].Value.ConnectedClients < lowest.Value.ConnectedClients)
+                {
+                    lowest = servers[i];
+                }
+            }
+
+            // respond with the server ip
+            // if the string is still dummy then theres no servers
+            await context.Response.SendResponseAsync(lowest.Key != "Dummy" ? lowest.Key : HttpStatusCode.InternalServerError);
         }
     }
 
