@@ -116,6 +116,7 @@ namespace LightReflectiveMirror
         {
             IPEndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
             var data = _NATPuncher.EndReceive(result, ref newClientEP);
+            _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
 
             if (!newClientEP.Address.Equals(_relayPuncherIP.Address))
             {
@@ -146,8 +147,6 @@ namespace LightReflectiveMirror
                     }
                 }
             }
-
-            _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
         }
 
         void ServerProcessProxyData(IPEndPoint remoteEndpoint, byte[] data)
@@ -505,7 +504,7 @@ namespace LightReflectiveMirror
                     else
                     {
                         relayServerList?.Clear();
-                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
+                        relayServerList = JsonConvert.DeserializeObject<List<Room>>(result.Decompress());
                         serverListUpdated?.Invoke();
                     }
 #endif
@@ -557,7 +556,7 @@ namespace LightReflectiveMirror
                 else
                 {
                     relayServerList?.Clear();
-                    relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result);
+                    relayServerList = JsonConvert.DeserializeObject<List<Room>>(result);
                     serverListUpdated?.Invoke();
                 }
 #endif
