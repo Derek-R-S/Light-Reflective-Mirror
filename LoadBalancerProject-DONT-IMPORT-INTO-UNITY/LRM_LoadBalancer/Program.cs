@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +19,7 @@ namespace LightReflectiveMirror.LoadBalancing
         private int _pingDelay = 10000;
         public static bool showDebugLogs = false;
         const string API_PATH = "/api/stats";
-        const string CONFIG_PATH = "config.json";
+        readonly string CONFIG_PATH = System.Environment.GetEnvironmentVariable("LRM_LB_CONFIG_PATH") ?? "config.json";
 
         public static Config conf;
         public static Program instance;
