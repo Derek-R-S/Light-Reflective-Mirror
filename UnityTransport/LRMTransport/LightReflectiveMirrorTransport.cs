@@ -99,6 +99,7 @@ namespace LightReflectiveMirror
 
             SetTransportPort(port);
 
+            this.serverIP = serverIP;
             _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
             clientToServerTransport.ClientConnect(serverIP);
         }
