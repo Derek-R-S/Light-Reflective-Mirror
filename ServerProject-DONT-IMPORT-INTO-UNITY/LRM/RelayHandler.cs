@@ -233,9 +233,7 @@ namespace LightReflectiveMirror
         void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port)
         {
             LeaveRoom(clientId);
-
-            IPEndPoint hostIP = null;
-            Program.instance.NATConnections.TryGetValue(clientId, out hostIP);
+            Program.instance.NATConnections.TryGetValue(clientId, out IPEndPoint hostIP);
 
             Room room = new Room
             {
@@ -245,6 +243,12 @@ namespace LightReflectiveMirror
                 isPublic = isPublic,
                 serverData = serverData,
                 clients = new List<int>(),
+
+                // hard coded for now REMEMBER TO UN-HARDCODE RETARD
+                // this is needed for load balancer to know which server this room 
+                // belongs to
+                relayInfo = new RelayAddress { Address = Program.publicIP, Port = 7777, EndpointPort = Program.conf.EndpointPort },
+
                 serverId = GetRandomServerID(),
                 hostIP = hostIP,
                 hostLocalIP = hostLocalIP,

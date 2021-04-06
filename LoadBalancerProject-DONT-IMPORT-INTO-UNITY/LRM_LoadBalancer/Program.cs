@@ -14,7 +14,7 @@ namespace LightReflectiveMirror.LoadBalancing
         /// Keeps track of all available relays.
         /// Key is server address, value is CCU.
         /// </summary>
-        public Dictionary<RelayAddress, RelayStats> availableRelayServers = new();
+        public Dictionary<RelayAddress, RelayServerInfo> availableRelayServers = new();
 
         private int _pingDelay = 10000;
         const string API_PATH = "/api/stats";
@@ -64,7 +64,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 availableRelayServers.Add(new RelayAddress { Port = port, EndpointPort = endpointPort, Address = serverIP }, stats.Value);
         }
 
-        public async Task<RelayStats?> ManualPingServer(string serverIP, ushort port) 
+        public async Task<RelayServerInfo?> ManualPingServer(string serverIP, ushort port) 
         {
             using (WebClient wc = new WebClient())
             {
@@ -72,11 +72,28 @@ namespace LightReflectiveMirror.LoadBalancing
                 {
                     string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}{API_PATH}");
 
-                    return JsonConvert.DeserializeObject<RelayStats>(receivedStats);
+                    return JsonConvert.DeserializeObject<RelayServerInfo>(receivedStats);
                 }
                 catch(Exception e)
                 {
                     // Server failed to respond to stats, dont add to load balancer.
+                    return null;
+                }
+            }
+        }
+
+        public async Task<List<Room>> GetServerListFromIndividualRelay(string serverIP, ushort port)
+        {
+            using (WebClient wc = new WebClient())
+            {
+                try
+                {
+                    string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}/api/servers");
+                    return JsonConvert.DeserializeObject<List<Room>>(receivedStats);
+                }
+                catch (Exception e)
+                {
+                    // Server failed to respond
                     return null;
                 }
             }
@@ -100,7 +117,7 @@ namespace LightReflectiveMirror.LoadBalancing
                         try
                         {
                             var serverStats = wc.DownloadString(url);
-                            var deserializedData = JsonConvert.DeserializeObject<RelayStats>(serverStats);
+                            var deserializedData = JsonConvert.DeserializeObject<RelayServerInfo>(serverStats);
 
                             WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
 
@@ -137,7 +154,7 @@ namespace LightReflectiveMirror.LoadBalancing
  | |      | |  | |    /  \    | |  | |                    w /|                
  | |      | |  | |   / /\ \   | |  | |                     | \                
  | |____  | |__| |  / ____ \  | |__| |                    m  m copyright monkesoft 2021                
- |______|  \____/  /_/    \_\ |_____/    
+ |______|  \____/  /_/    \_\ |_____/                                                                                                                                             
   ____               _                   _   _    _____   ______   _____  
  |  _ \      /\     | |          /\     | \ | |  / ____| |  ____| |  __ \ 
  | |_) |    /  \    | |         /  \    |  \| | | |      | |__    | |__) |
@@ -165,8 +182,9 @@ namespace LightReflectiveMirror.LoadBalancing
 
     }
 
+    // for stats
     [Serializable]
-    public struct RelayStats
+    public struct RelayServerInfo
     {
         public int ConnectedClients;
         public int RoomCount;
@@ -174,12 +192,28 @@ namespace LightReflectiveMirror.LoadBalancing
         public TimeSpan Uptime;
     }
 
+    // container for relay address info
     [Serializable]
     public struct RelayAddress
     {
         public ushort Port;
         public ushort EndpointPort;
         public string Address;
+    }
+
+    // fuck you
+    [Serializable]
+    public struct Room
+    {
+        public int serverId;
+        public int hostId;
+        public string serverName;
+        public string serverData;
+        public bool isPublic;
+        public int maxPlayers;
+        public List<int> clients;
+
+        public RelayAddress relayInfo;
     }
 
 }

@@ -44,7 +44,7 @@ namespace LightReflectiveMirror
 
         [Header("Server List")]
         public UnityEvent serverListUpdated;
-        public List<RelayServerInfo> relayServerList { private set; get; } = new List<RelayServerInfo>();
+        public List<Room> relayServerList { private set; get; } = new List<Room>();
 
         [Header("Server Information")]
         public int serverId = -1;
@@ -472,7 +472,61 @@ namespace LightReflectiveMirror
 
         IEnumerator GetServerList()
         {
-            string uri = $"http://{serverIP}:{endpointServerPort}/api/compressed/servers";
+            if (!useLoadBalancer)
+            {
+                string uri = $"http://{serverIP}:{endpointServerPort}/api/compressed/servers";
+
+                using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+                {
+                    // Request and wait for the desired page.
+                    yield return webRequest.SendWebRequest();
+                    var result = webRequest.downloadHandler.text;
+
+#if UNITY_2020_1_OR_NEWER
+                    switch (webRequest.result)
+                    {
+                        case UnityWebRequest.Result.ConnectionError:
+                        case UnityWebRequest.Result.DataProcessingError:
+                        case UnityWebRequest.Result.ProtocolError:
+                            Debug.LogWarning("LRM | Network Error while retreiving the server list!");
+                            break;
+
+                        case UnityWebRequest.Result.Success:
+                            relayServerList?.Clear();
+                            relayServerList = JsonConvert.DeserializeObject<List<Room>>(result.Decompress());
+                            serverListUpdated?.Invoke();
+                            break;
+                    }
+#else
+                    if (webRequest.isNetworkError || webRequest.isHttpError)
+                    {
+                        Debug.LogWarning("LRM | Network Error while retreiving the server list!");
+                    }
+                    else
+                    {
+                        relayServerList?.Clear();
+                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
+                        serverListUpdated?.Invoke();
+                    }
+#endif
+                }
+            }
+            else // get master list from load balancer
+            {
+                yield return StartCoroutine(RetrieveMasterServerListFromLoadBalancer());
+            }
+
+        }
+
+        /// <summary>
+        /// Gets master list from the LB.
+        /// This can be optimized but for now it is it's
+        /// own separate method, so i can understand wtf is going on :D
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator RetrieveMasterServerListFromLoadBalancer()
+        {
+            string uri = $"http://{loadBalancerAddress}:{loadBalancerPort}/api/masterlist/";
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -491,7 +545,7 @@ namespace LightReflectiveMirror
 
                     case UnityWebRequest.Result.Success:
                         relayServerList?.Clear();
-                        relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
+                        relayServerList = JsonConvert.DeserializeObject<List<Room>>(result);
                         serverListUpdated?.Invoke();
                         break;
                 }
@@ -503,7 +557,7 @@ namespace LightReflectiveMirror
                 else
                 {
                     relayServerList?.Clear();
-                    relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result.Decompress());
+                    relayServerList = JsonConvert.DeserializeObject<List<RelayServerInfo>>(result);
                     serverListUpdated?.Invoke();
                 }
 #endif
@@ -842,13 +896,15 @@ namespace LightReflectiveMirror
     }
 
     [Serializable]
-    public struct RelayServerInfo
+    public struct Room
     {
         public string serverName;
         public int currentPlayers;
         public int maxPlayers;
         public int serverId;
         public string serverData;
+
+        public RelayAddress relayInfo;
     }
 
     [Serializable]
@@ -858,4 +914,5 @@ namespace LightReflectiveMirror
         public ushort EndpointPort;
         public string Address;
     }
+
 }

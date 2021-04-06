@@ -26,7 +26,7 @@ namespace LightReflectiveMirror
         private MethodInfo _lateUpdateMethod;
 
         private DateTime _startupTime;
-
+        public static string publicIP;
         private List<int> _currentConnections = new List<int>();
         public Dictionary<int, IPEndPoint> NATConnections = new Dictionary<int, IPEndPoint>();
         private BiDictionary<int, string> _pendingNATPunches = new BiDictionary<int, string>();
@@ -51,6 +51,7 @@ namespace LightReflectiveMirror
             WriteTitle();
             instance = this;
             _startupTime = DateTime.Now;
+            publicIP = new WebClient().DownloadString("http://icanhazip.com").Replace("\\r\\n", "").Replace("\\n", "").Trim();
 
             if (!File.Exists(CONFIG_PATH))
             {

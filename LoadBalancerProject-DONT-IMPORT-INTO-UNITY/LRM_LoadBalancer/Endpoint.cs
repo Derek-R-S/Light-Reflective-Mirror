@@ -1,4 +1,4 @@
-using Grapevine;
+﻿using Grapevine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -33,7 +33,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
 
-            Console.WriteLine("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey+"]");
+            Console.WriteLine("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
 
             // if server is authenticated
             if (receivedAuthKey != null && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
@@ -62,13 +62,13 @@ namespace LightReflectiveMirror.LoadBalancing
             // collection being modified while iterating.
             var servers = Program.instance.availableRelayServers.ToList();
 
-            if(servers.Count == 0)
+            if (servers.Count == 0)
             {
                 await context.Response.SendResponseAsync(HttpStatusCode.ServiceUnavailable);
                 return;
             }
 
-            KeyValuePair<RelayAddress, RelayStats> lowest = new(new RelayAddress { Address = "Dummy" }, new RelayStats { ConnectedClients = int.MaxValue });
+            KeyValuePair<RelayAddress, RelayServerInfo> lowest = new(new RelayAddress { Address = "Dummy" }, new RelayServerInfo { ConnectedClients = int.MaxValue });
 
             for (int i = 0; i < servers.Count; i++)
             {
@@ -84,8 +84,8 @@ namespace LightReflectiveMirror.LoadBalancing
             {
                 // ping server to ensure its online.
                 var chosenServer = await Program.instance.ManualPingServer(lowest.Key.Address, lowest.Key.EndpointPort);
- 
-                if(chosenServer.HasValue)
+
+                if (chosenServer.HasValue)
                     await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
                 else
                     await context.Response.SendResponseAsync(HttpStatusCode.BadGateway);
@@ -95,7 +95,39 @@ namespace LightReflectiveMirror.LoadBalancing
                 await context.Response.SendResponseAsync(HttpStatusCode.InternalServerError);
             }
         }
+
+        /// <summary>
+        /// Returns all the servers on all the relay nodes.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        [RestRoute("Get", "/api/masterlist/")]
+        public async Task GetMasterServerList(IHttpContext context)
+        {
+            var relays = Program.instance.availableRelayServers.ToList();
+            List<Room> masterList = new();
+
+            foreach (var relay in relays)
+            {
+                var serversOnRelay = await Program.instance.GetServerListFromIndividualRelay(relay.Key.Address, relay.Key.EndpointPort);
+
+                if(serversOnRelay != null)
+                {
+                    masterList.AddRange(serversOnRelay);
+                }
+                else { continue; }
+            }
+
+            // we have servers, send em!
+            if (masterList.Any())
+                await context.Response.SendResponseAsync(JsonConvert.SerializeObject(masterList));
+            // no servers or maybe no relays, fuck you
+            else
+                await context.Response.SendResponseAsync(HttpStatusCode.NoContent);
+        }
     }
+
+    #region Startup
 
     public class EndpointServer
     {
@@ -144,5 +176,8 @@ namespace LightReflectiveMirror.LoadBalancing
 
             return null;
         }
+        #endregion
+
     }
+
 }
