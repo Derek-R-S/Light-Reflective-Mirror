@@ -12,5 +12,6 @@ namespace LightReflectiveMirror.LoadBalancing
         public string AuthKey = "AuthKey";
         public ushort EndpointPort = 7070;
         public ushort RelayEndpointPort = 8080;
+        public bool ShowDebugLogs = false;
     }
 }

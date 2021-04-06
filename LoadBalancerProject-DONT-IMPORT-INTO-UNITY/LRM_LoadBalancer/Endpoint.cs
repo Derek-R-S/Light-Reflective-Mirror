@@ -33,15 +33,25 @@ namespace LightReflectiveMirror.LoadBalancing
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
 
-            Console.WriteLine("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
+            if(Program.showDebugLogs)
+                Console.WriteLine("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
 
             // if server is authenticated
             if (receivedAuthKey != null && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
             {
-                Console.WriteLine($"Server accepted: {address}:{gamePort}");
-                var _gamePort = Convert.ToUInt16(gamePort);
-                var _endpointPort = Convert.ToUInt16(endpointPort);
-                await Program.instance.AddServer(address, _gamePort, _endpointPort);
+                if(Program.showDebugLogs)
+                    Console.WriteLine($"Server accepted: {address}:{gamePort}");
+
+                try
+                {
+                    var _gamePort = Convert.ToUInt16(gamePort);
+                    var _endpointPort = Convert.ToUInt16(endpointPort);
+                    await Program.instance.AddServer(address, _gamePort, _endpointPort);
+                }
+                catch
+                {
+                    await context.Response.SendResponseAsync(HttpStatusCode.BadRequest);
+                }
 
                 await context.Response.SendResponseAsync(HttpStatusCode.Ok);
             }

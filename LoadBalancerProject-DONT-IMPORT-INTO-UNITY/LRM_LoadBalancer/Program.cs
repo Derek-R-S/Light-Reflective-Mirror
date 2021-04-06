@@ -17,6 +17,7 @@ namespace LightReflectiveMirror.LoadBalancing
         public Dictionary<RelayAddress, RelayServerInfo> availableRelayServers = new();
 
         private int _pingDelay = 10000;
+        public static bool showDebugLogs = false;
         const string API_PATH = "/api/stats";
         const string CONFIG_PATH = "config.json";
 
@@ -41,6 +42,7 @@ namespace LightReflectiveMirror.LoadBalancing
             {
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
                 _pingDelay = conf.ConnectedServerPingRate;
+                showDebugLogs = conf.ShowDebugLogs;
 
                 if (new EndpointServer().Start(conf.EndpointPort))
                     WriteLogMessage("Endpoint server started successfully", ConsoleColor.Green);
@@ -58,13 +60,21 @@ namespace LightReflectiveMirror.LoadBalancing
 
         public async Task AddServer(string serverIP, ushort port, ushort endpointPort)
         {
+            var relayAddr = new RelayAddress { Port = port, EndpointPort = endpointPort, Address = serverIP };
+
+            if (availableRelayServers.ContainsKey(relayAddr))
+            {
+                WriteLogMessage($"LRM Node {serverIP}:{port} tried to register while already registered!");
+                return;
+            }
+
             var stats = await ManualPingServer(serverIP, endpointPort);
 
-            if(stats.HasValue)
-                availableRelayServers.Add(new RelayAddress { Port = port, EndpointPort = endpointPort, Address = serverIP }, stats.Value);
+            if (stats.HasValue)
+                availableRelayServers.Add(relayAddr, stats.Value);
         }
 
-        public async Task<RelayServerInfo?> ManualPingServer(string serverIP, ushort port) 
+        public async Task<RelayServerInfo?> ManualPingServer(string serverIP, ushort port)
         {
             using (WebClient wc = new WebClient())
             {
@@ -74,7 +84,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
                     return JsonConvert.DeserializeObject<RelayServerInfo>(receivedStats);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     // Server failed to respond to stats, dont add to load balancer.
                     return null;
@@ -103,12 +113,13 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             while (true)
             {
-                WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
+                if (showDebugLogs)
+                    WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
 
                 // Create a new list so we can modify the collection in our loop.
                 var keys = new List<RelayAddress>(availableRelayServers.Keys);
 
-                for(int i = 0; i < keys.Count; i++)
+                for (int i = 0; i < keys.Count; i++)
                 {
                     string url = $"http://{keys[i].Address}:{keys[i].EndpointPort}{API_PATH}";
 
@@ -119,7 +130,8 @@ namespace LightReflectiveMirror.LoadBalancing
                             var serverStats = wc.DownloadString(url);
                             var deserializedData = JsonConvert.DeserializeObject<RelayServerInfo>(serverStats);
 
-                            WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
+                            if (showDebugLogs)
+                                WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
 
                             if (availableRelayServers.ContainsKey(keys[i]))
                                 availableRelayServers[keys[i]] = deserializedData;
@@ -130,7 +142,8 @@ namespace LightReflectiveMirror.LoadBalancing
                         {
                             // server doesnt exist anymore probably
                             // do more shit here
-                            WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
+                            if (showDebugLogs)
+                                WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
                             availableRelayServers.Remove(keys[i]);
                         }
                     }
@@ -214,5 +227,4 @@ namespace LightReflectiveMirror.LoadBalancing
 
         public RelayAddress relayInfo;
     }
-
 }
