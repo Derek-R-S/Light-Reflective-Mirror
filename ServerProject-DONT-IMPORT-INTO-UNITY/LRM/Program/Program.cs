@@ -167,7 +167,7 @@ namespace LightReflectiveMirror
                     Environment.Exit(0);
                 }
 
-                if(conf.UseLoadBalancer)
+                if (conf.UseLoadBalancer)
                     await RegisterSelfToLoadBalancer();
             }
 
@@ -185,6 +185,15 @@ namespace LightReflectiveMirror
                     for(int i = 0; i < _currentConnections.Count; i++)
                         transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(new byte[] { 200 }));
 
+                    if (conf.UseLoadBalancer)
+                    {
+                        if (Endpoint.lastPing.AddSeconds(60) > DateTime.Now)
+                        {
+                            // Dont await that on main thread. It would cause a lag spike for clients.
+                            RegisterSelfToLoadBalancer();
+                        }
+                    }
+
                     GC.Collect();
                 }
 
@@ -194,6 +203,7 @@ namespace LightReflectiveMirror
 
         private async Task<bool> RegisterSelfToLoadBalancer()
         {
+            Endpoint.lastPing = DateTime.Now;
             try
             {
                 // replace hard coded value for config value later

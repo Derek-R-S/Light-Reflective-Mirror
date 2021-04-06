@@ -25,6 +25,8 @@ namespace LightReflectiveMirror.Endpoints
     {
         private static string _cachedServerList = "[]";
         private static string _cachedCompressedServerList;
+        public static DateTime lastPing = DateTime.Now;
+
         private static List<Room> _rooms { get => Program.instance.GetRooms().Where(x => x.isPublic).ToList(); }
 
         private RelayStats _stats { get => new RelayStats 
@@ -44,6 +46,7 @@ namespace LightReflectiveMirror.Endpoints
         [RestRoute("Get", "/api/stats")]
         public async Task Stats(IHttpContext context)
         {
+            lastPing = DateTime.Now;
             string json = JsonConvert.SerializeObject(_stats, Formatting.Indented);
             await context.Response.SendResponseAsync(json);
         }
