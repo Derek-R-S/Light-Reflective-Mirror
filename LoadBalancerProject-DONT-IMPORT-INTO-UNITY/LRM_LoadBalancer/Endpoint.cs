@@ -181,7 +181,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 }, (server) =>
                 {
                     server.Prefixes.Add($"http://{GetLocalIp()}:{port}/");
-                    server.Prefixes.Add($"http://127.0.0.1:{port}/");
+                    server.Prefixes.Add($"http://*:{port}/");
                 }).Build();
 
                 server.Router.Options.SendExceptionMessages = false;
