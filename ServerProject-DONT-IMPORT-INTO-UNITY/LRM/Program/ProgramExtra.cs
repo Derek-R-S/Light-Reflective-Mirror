@@ -5,6 +5,10 @@ namespace LightReflectiveMirror
     partial class Program
     {
 
+        public int GetConnections() => _currentConnections.Count;
+        public TimeSpan GetUptime() => DateTime.Now - _startupTime;
+        public int GetPublicRoomCount() => _relay.rooms.Where(x => x.isPublic).Count();
+
         static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White, bool oneLine = false)
         {
             Console.ForegroundColor = color;

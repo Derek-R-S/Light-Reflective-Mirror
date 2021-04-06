@@ -16,10 +16,6 @@ namespace LightReflectiveMirror
     partial class Program
     {
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
-
-        public int GetConnections() => _currentConnections.Count;
-        public TimeSpan GetUptime() => DateTime.Now - _startupTime;
-        public int GetPublicRoomCount() => _relay.rooms.Where(x => x.isPublic).Count();
         public List<Room> GetRooms() => _relay.rooms;
 
         public async Task MainAsync()
