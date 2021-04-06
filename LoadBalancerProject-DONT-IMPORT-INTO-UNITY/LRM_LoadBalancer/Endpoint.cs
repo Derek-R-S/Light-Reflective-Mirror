@@ -30,6 +30,7 @@ namespace LightReflectiveMirror.LoadBalancing
             string receivedAuthKey = req.Headers["Auth"];
             string endpointPort = req.Headers["EndpointPort"];
             string gamePort = req.Headers["GamePort"];
+            string publicIP = req.Headers["PIP"];
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
 
@@ -46,7 +47,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 {
                     var _gamePort = Convert.ToUInt16(gamePort);
                     var _endpointPort = Convert.ToUInt16(endpointPort);
-                    await Program.instance.AddServer(address, _gamePort, _endpointPort);
+                    await Program.instance.AddServer(address, _gamePort, _endpointPort, publicIP);
                 }
                 catch
                 {

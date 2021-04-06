@@ -58,9 +58,9 @@ namespace LightReflectiveMirror.LoadBalancing
         }
 
 
-        public async Task AddServer(string serverIP, ushort port, ushort endpointPort)
+        public async Task AddServer(string serverIP, ushort port, ushort endpointPort, string publicIP)
         {
-            var relayAddr = new RelayAddress { Port = port, EndpointPort = endpointPort, Address = serverIP };
+            var relayAddr = new RelayAddress { Port = port, EndpointPort = endpointPort, Address = publicIP, EndpointAddress = serverIP };
 
             if (availableRelayServers.ContainsKey(relayAddr))
             {
@@ -121,7 +121,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
                 for (int i = 0; i < keys.Count; i++)
                 {
-                    string url = $"http://{keys[i].Address}:{keys[i].EndpointPort}{API_PATH}";
+                    string url = $"http://{keys[i].EndpointAddress}:{keys[i].EndpointPort}{API_PATH}";
 
                     using (WebClient wc = new WebClient())
                     {
@@ -206,12 +206,14 @@ namespace LightReflectiveMirror.LoadBalancing
     }
 
     // container for relay address info
-    [Serializable]
+    [JsonObject(MemberSerialization.OptOut)]
     public struct RelayAddress
     {
         public ushort Port;
         public ushort EndpointPort;
         public string Address;
+        [JsonIgnore]
+        public string EndpointAddress;
     }
 
     [Serializable]

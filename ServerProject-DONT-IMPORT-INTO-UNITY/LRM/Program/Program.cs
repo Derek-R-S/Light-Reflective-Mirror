@@ -23,7 +23,8 @@ namespace LightReflectiveMirror
             WriteTitle();
             instance = this;
             _startupTime = DateTime.Now;
-            publicIP = new WebClient().DownloadString("http://icanhazip.com").Replace("\\r\\n", "").Replace("\\n", "").Trim();
+            using (WebClient wc = new WebClient())
+                publicIP = wc.DownloadString("http://icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
 
             if (!File.Exists(CONFIG_PATH))
             {
@@ -204,6 +205,7 @@ namespace LightReflectiveMirror
                 authReq.Headers.Add("Auth", conf.LoadBalancerAuthKey);
                 authReq.Headers.Add("EndpointPort", endpointPort);
                 authReq.Headers.Add("GamePort", gamePort);
+                authReq.Headers.Add("PIP", publicIP); // Public IP
 
                 var res = await authReq.GetResponseAsync();
 
