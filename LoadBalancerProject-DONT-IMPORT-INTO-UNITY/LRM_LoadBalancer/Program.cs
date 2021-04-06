@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.LoadBalancing
 {
-    class Program
+    partial class Program
     {
         /// <summary>
         /// Keeps track of all available relays.
@@ -18,6 +18,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
         private int _pingDelay = 10000;
         public static bool showDebugLogs = false;
+        public static DateTime startupTime;
         const string API_PATH = "/api/stats";
         readonly string CONFIG_PATH = System.Environment.GetEnvironmentVariable("LRM_LB_CONFIG_PATH") ?? "config.json";
 
@@ -30,6 +31,7 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             WriteTitle();
             instance = this;
+            startupTime = DateTime.Now;
 
             if (!File.Exists(CONFIG_PATH))
             {
@@ -195,38 +197,4 @@ namespace LightReflectiveMirror.LoadBalancing
 
     }
 
-    // for stats
-    [Serializable]
-    public struct RelayServerInfo
-    {
-        public int ConnectedClients;
-        public int RoomCount;
-        public int PublicRoomCount;
-        public TimeSpan Uptime;
-    }
-
-    // container for relay address info
-    [JsonObject(MemberSerialization.OptOut)]
-    public struct RelayAddress
-    {
-        public ushort Port;
-        public ushort EndpointPort;
-        public string Address;
-        [JsonIgnore]
-        public string EndpointAddress;
-    }
-
-    [Serializable]
-    public struct Room
-    {
-        public int serverId;
-        public int hostId;
-        public string serverName;
-        public string serverData;
-        public bool isPublic;
-        public int maxPlayers;
-        public List<int> clients;
-
-        public RelayAddress relayInfo;
-    }
 }
