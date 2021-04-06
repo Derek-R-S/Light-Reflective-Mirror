@@ -1,4 +1,6 @@
+using kcp2k;
 using Mirror;
+using Mirror.SimpleWeb;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -17,7 +19,7 @@ namespace LightReflectiveMirror
     {
         [Header("Connection Variables")]
         public Transport clientToServerTransport;
-        public string serverIP = "34.67.125.123";
+        public string serverIP = null;
         public ushort endpointServerPort = 8080;
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;
@@ -26,13 +28,13 @@ namespace LightReflectiveMirror
 
         [Header("NAT Punchthrough")]
         [Help("NAT Punchthrough will require the Direct Connect module attached.")]
-        public bool useNATPunch = true;
-        public ushort NATPunchtroughPort = 7776;
+        public bool useNATPunch = false;
+        public int NATPunchtroughPort = -1;
 
         [Header("Load Balancer")]
         public bool useLoadBalancer = false;
         public ushort loadBalancerPort = 7070;
-        public string loadBalancerAddress = "127.0.0.1";
+        public string loadBalancerAddress = null;
 
         [Header("Server Hosting Data")]
         public string serverName = "My awesome server!";
@@ -425,17 +427,24 @@ namespace LightReflectiveMirror
                     case OpCodes.RequestNATConnection:
                         if (GetLocalIp() != null && _directConnectModule != null)
                         {
-                            _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
-                            _NATIP = new IPEndPoint(IPAddress.Parse(GetLocalIp()), UnityEngine.Random.Range(16000, 17000));
-                            _NATPuncher.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            _NATPuncher.Client.Bind(_NATIP);
-                            _relayPuncherIP = new IPEndPoint(IPAddress.Parse(serverIP), NATPunchtroughPort);
-
                             byte[] initalData = new byte[150];
                             int sendPos = 0;
 
                             initalData.WriteBool(ref sendPos, true);
                             initalData.WriteString(ref sendPos, data.ReadString(ref pos));
+                            NATPunchtroughPort = data.ReadInt(ref pos);
+
+                            _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
+                            _NATIP = new IPEndPoint(IPAddress.Parse(GetLocalIp()), UnityEngine.Random.Range(16000, 17000));
+                            _NATPuncher.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            _NATPuncher.Client.Bind(_NATIP);
+
+                            IPAddress serverAddr;
+
+                            if (!IPAddress.TryParse(serverIP, out serverAddr))
+                                serverAddr = Dns.GetHostEntry(serverIP).AddressList[0];
+
+                            _relayPuncherIP = new IPEndPoint(IPAddress.Parse(serverIP), NATPunchtroughPort);
 
                             // Send 3 to lower chance of it being dropped or corrupted when received on server.
                             _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
@@ -447,6 +456,18 @@ namespace LightReflectiveMirror
                 }
             }
             catch (Exception e) { print(e); }
+        }
+
+        public void SetTransportPort(ushort port)
+        {
+            if (clientToServerTransport is KcpTransport kcp)
+                kcp.Port = port;
+
+            if (clientToServerTransport is TelepathyTransport telepathy)
+                telepathy.port = port;
+
+            if (clientToServerTransport is SimpleWebTransport swt)
+                swt.port = port;
         }
 
         IEnumerator GetServerList()

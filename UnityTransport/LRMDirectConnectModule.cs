@@ -9,6 +9,7 @@ using LightReflectiveMirror;
 [RequireComponent(typeof(LightReflectiveMirrorTransport))]
 public class LRMDirectConnectModule : MonoBehaviour
 {
+    [HideInInspector]
     public Transport directConnectTransport;
     public bool showDebugLogs;
     private LightReflectiveMirrorTransport lightMirrorTransport;

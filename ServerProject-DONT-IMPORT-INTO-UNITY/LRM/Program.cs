@@ -110,6 +110,7 @@ namespace LightReflectiveMirror
                                 _NATRequestPosition = 0;
                                 _NATRequest.WriteByte(ref _NATRequestPosition, (byte)OpCodes.RequestNATConnection);
                                 _NATRequest.WriteString(ref _NATRequestPosition, natID);
+                                _NATRequest.WriteInt(ref _NATRequestPosition, conf.NATPunchtroughPort);
                                 transport.ServerSend(clientID, 0, new ArraySegment<byte>(_NATRequest, 0, _NATRequestPosition));
                             }
                         };
