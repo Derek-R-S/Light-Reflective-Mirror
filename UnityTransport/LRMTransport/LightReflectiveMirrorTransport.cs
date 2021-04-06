@@ -331,7 +331,7 @@ namespace LightReflectiveMirror
         {
             for(int i = 0; i < relayServerList.Count; i++)
             {
-                if(relayServerList[i].serverId == serverId)
+                if(relayServerList[i].serverId == serverID)
                     return relayServerList[i];
             }
 
@@ -372,12 +372,18 @@ namespace LightReflectiveMirror
     public struct Room
     {
         public string serverName;
-        public int currentPlayers;
         public int maxPlayers;
         public int serverId;
         public string serverData;
+        public int hostId;
+        public List<int> clients;
 
         public RelayAddress relayInfo;
+
+        /// <summary>
+        /// This variable is only available on the client
+        /// </summary>
+        public int currentPlayers { get => clients.Count + 1; }
     }
 
     [Serializable]
