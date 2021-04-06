@@ -7,7 +7,8 @@
 
 # Light Reflective Mirror
 
-LRM Node [![Build status](http://monk3.xyz:90/api/projects/status/p5g03jifksxvkjct/branch/main?svg=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror/branch/main) LoadBalancer [![Build status](http://monk3.xyz:90/api/projects/status/kh6awelf16hl5um4/branch/main?svg=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror-canqw/branch/main)
+LRM Node [![Build status](http://monk3.xyz:90/api/projects/status/p5g03jifksxvkjct/branch/main?svg=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror/branch/main) 
+LoadBalancer [![Build status](http://monk3.xyz:90/api/projects/status/kh6awelf16hl5um4/branch/main?svg=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror-canqw/branch/main)
 
 ## What
 Light Reflective Mirror is a transport for Mirror Networking which relays network traffic through your own servers. This allows you to have clients host game servers and not worry about NAT/Port Forwarding, etc. There are still features I plan on adding but it still is completely stable in its current state.
