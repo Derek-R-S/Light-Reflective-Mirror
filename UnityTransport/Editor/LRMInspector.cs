@@ -10,6 +10,7 @@ using Mirror.SimpleWeb;
 using System;
 using kcp2k;
 
+#if UNITY_EDITOR
 namespace LightReflectiveMirror
 {
     [CustomEditor(typeof(LightReflectiveMirrorTransport))]
@@ -250,3 +251,4 @@ namespace LightReflectiveMirror
         }
     }
 }
+#endif
