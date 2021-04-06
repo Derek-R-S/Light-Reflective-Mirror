@@ -98,8 +98,10 @@ namespace LightReflectiveMirror
                 throw new Exception("LRM | Client to Server Transport cannot be LRM.");
 
             SetTransportPort(port);
+            
 
             this.serverIP = serverIP;
+
             _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
             clientToServerTransport.ClientConnect(serverIP);
         }

@@ -10,12 +10,11 @@ using Mirror.SimpleWeb;
 using System;
 using kcp2k;
 
-#if UNITY_EDITOR
 namespace LightReflectiveMirror
 {
-    [UnityEditor.CustomEditor(typeof(LightReflectiveMirrorTransport))]
-
-    public class LRMInspector : UnityEditor.Editor
+#if UNITY_EDITOR
+    [CustomEditor(typeof(LightReflectiveMirrorTransport))]
+    public class LRMInspector : Editor
     {
         int serverPort = 7070;
         string serverIP;
@@ -251,5 +250,5 @@ namespace LightReflectiveMirror
             }
         }
     }
-}
 #endif
+}
