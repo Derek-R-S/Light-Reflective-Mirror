@@ -37,7 +37,7 @@ namespace LightReflectiveMirror
 
         private UdpClient _punchServer;
 
-        private const string CONFIG_PATH = "config.json";
+        private readonly string CONFIG_PATH = System.Environment.GetEnvironmentVariable("LRM_CONFIG_PATH") ?? "config.json";
 
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -67,7 +67,7 @@ namespace LightReflectiveMirror
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
                 { 
-                    var asm = Assembly.LoadFile(Directory.GetCurrentDirectory() + @"\" + conf.TransportDLL);
+                    var asm = Assembly.LoadFile(Path.GetFullPath(conf.TransportDLL));
                     WriteLogMessage($"OK", ConsoleColor.Green);
 
                     WriteLogMessage("\nLoading Transport Class... ", ConsoleColor.White, true);
