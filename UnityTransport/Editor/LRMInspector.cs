@@ -228,7 +228,13 @@ namespace LightReflectiveMirror
                         break;
                     case 3:
                         // Other tab...
-                        //EditorGUIUtility.LookLikeControls();
+
+                        GUI.enabled = false;
+                        EditorGUILayout.TextField("Server ID", lrm.serverId == -1 ? "Not Hosting" : lrm.serverId.ToString());
+                        GUI.enabled = true;
+
+                        EditorGUILayout.Space();
+
                         lrm.serverName = EditorGUILayout.TextField("Server Name", lrm.serverName);
                         lrm.extraServerData = EditorGUILayout.TextField("Extra Server Data", lrm.extraServerData);
                         lrm.maxServerPlayers = EditorGUILayout.IntField("Max Server Players", lrm.maxServerPlayers);
