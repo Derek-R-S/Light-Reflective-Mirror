@@ -201,7 +201,6 @@ namespace LightReflectiveMirror.LoadBalancing
         public string Address;
     }
 
-    // fuck you
     [Serializable]
     public struct Room
     {
