@@ -13,8 +13,9 @@ using kcp2k;
 #if UNITY_EDITOR
 namespace LightReflectiveMirror
 {
-    [CustomEditor(typeof(LightReflectiveMirrorTransport))]
-    public class LRMInspector : Editor
+    [UnityEditor.CustomEditor(typeof(LightReflectiveMirrorTransport))]
+
+    public class LRMInspector : UnityEditor.Editor
     {
         int serverPort = 7070;
         string serverIP;
