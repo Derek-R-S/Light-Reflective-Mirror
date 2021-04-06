@@ -15,7 +15,7 @@ namespace LightReflectiveMirror
     [CustomEditor(typeof(LightReflectiveMirrorTransport))]
     public class LRMInspector : Editor
     {
-        int serverPort = 7070;
+        int serverPort = 8080;
         string serverIP;
         float invalidServerIP = 0;
         bool usingLLB = false;
@@ -65,6 +65,7 @@ namespace LightReflectiveMirror
                         lrm.loadBalancerAddress = serverAddr.ToString();
                         lrm.loadBalancerPort = (ushort)serverPort;
                         lrm.serverIP = "127.0.0.1";
+                        lrm.useLoadBalancer = true;
                         usingLLB = false;
                         serverIP = "";
                     }
