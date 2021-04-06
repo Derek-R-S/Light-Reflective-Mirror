@@ -224,7 +224,7 @@ namespace LightReflectiveMirror
                         // Load balancer tab
                         lrm.useLoadBalancer = EditorGUILayout.Toggle("Use Load Balancer", lrm.useLoadBalancer);
                         lrm.loadBalancerAddress = EditorGUILayout.TextField("Load Balancer Address", lrm.loadBalancerAddress);
-                        lrm.loadBalancerPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("Load Balancer Port", lrm.endpointServerPort), ushort.MinValue, ushort.MaxValue);
+                        lrm.loadBalancerPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("Load Balancer Port", lrm.loadBalancerPort), ushort.MinValue, ushort.MaxValue);
                         break;
                     case 3:
                         // Other tab...
