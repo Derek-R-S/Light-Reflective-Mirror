@@ -32,6 +32,6 @@ namespace LightReflectiveMirror
 
         private UdpClient _punchServer;
 
-        private const string CONFIG_PATH = "config.json";
+        private readonly string CONFIG_PATH = System.Environment.GetEnvironmentVariable("LRM_CONFIG_PATH") ?? "config.json";
     }
 }
