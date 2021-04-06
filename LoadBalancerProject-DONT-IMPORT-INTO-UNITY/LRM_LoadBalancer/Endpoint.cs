@@ -1,4 +1,5 @@
 ﻿using Grapevine;
+using LightReflectiveMirror.Debug;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -44,15 +45,12 @@ namespace LightReflectiveMirror.LoadBalancing
             string publicIP = req.Headers["PIP"];
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
-
-            if(Program.showDebugLogs)
-                Console.WriteLine("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
+            Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
 
             // if server is authenticated
             if (receivedAuthKey != null && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
             {
-                if(Program.showDebugLogs)
-                    Console.WriteLine($"Server accepted: {address}:{gamePort}");
+                Logger.WriteLogMessage($"Server accepted: {address}:{gamePort}");
 
                 try
                 {
