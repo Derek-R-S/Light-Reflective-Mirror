@@ -433,10 +433,21 @@ namespace LightReflectiveMirror
                             initalData.WriteString(ref sendPos, data.ReadString(ref pos));
                             NATPunchtroughPort = data.ReadInt(ref pos);
 
-                            _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
-                            _NATIP = new IPEndPoint(IPAddress.Parse(GetLocalIp()), UnityEngine.Random.Range(16000, 17000));
-                            _NATPuncher.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            _NATPuncher.Client.Bind(_NATIP);
+                            if (_NATPuncher == null)
+                            {
+                                _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
+                                while (true)
+                                {
+                                    try
+                                    {
+                                        _NATIP = new IPEndPoint(IPAddress.Parse(GetLocalIp()), UnityEngine.Random.Range(16000, 17000));
+                                        _NATPuncher.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                                        _NATPuncher.Client.Bind(_NATIP);
+                                        break;
+                                    }
+                                    catch {} // Binding port is in use, keep trying :P
+                                }
+                            }
 
                             IPAddress serverAddr;
 
