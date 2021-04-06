@@ -1,4 +1,5 @@
-﻿using Mirror;
+﻿using LightReflectiveMirror.Endpoints;
+using Mirror;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -12,7 +13,7 @@ namespace LightReflectiveMirror
         public static Transport transport;
         public static Program instance;
         public static Config conf;
-
+        
         private RelayHandler _relay;
         private MethodInfo _awakeMethod;
         private MethodInfo _startMethod;

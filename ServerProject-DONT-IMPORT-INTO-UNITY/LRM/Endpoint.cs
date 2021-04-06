@@ -23,7 +23,9 @@ namespace LightReflectiveMirror.Endpoints
     [RestResource]
     public class Endpoint
     {
-        private List<Room> _rooms { get => Program.instance.GetRooms().Where(x => x.isPublic).ToList(); }
+        private static string _cachedServerList = "[]";
+        private static string _cachedCompressedServerList;
+        private static List<Room> _rooms { get => Program.instance.GetRooms().Where(x => x.isPublic).ToList(); }
 
         private RelayStats _stats { get => new RelayStats 
         {
@@ -32,6 +34,12 @@ namespace LightReflectiveMirror.Endpoints
             PublicRoomCount = Program.instance.GetPublicRoomCount(),
             Uptime = Program.instance.GetUptime()
         }; }
+
+        public static void RoomsModified()
+        {
+            _cachedServerList = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
+            _cachedCompressedServerList = _cachedServerList.Compress();
+        }
 
         [RestRoute("Get", "/api/stats")]
         public async Task Stats(IHttpContext context)
@@ -45,8 +53,7 @@ namespace LightReflectiveMirror.Endpoints
         {
             if (Program.conf.EndpointServerList)
             {
-                string json = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
-                await context.Response.SendResponseAsync(json);
+                await context.Response.SendResponseAsync(_cachedServerList);
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
@@ -57,8 +64,7 @@ namespace LightReflectiveMirror.Endpoints
         {
             if (Program.conf.EndpointServerList)
             {
-                string json = JsonConvert.SerializeObject(_rooms);
-                await context.Response.SendResponseAsync(json.Compress());
+                await context.Response.SendResponseAsync(_cachedCompressedServerList);
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);

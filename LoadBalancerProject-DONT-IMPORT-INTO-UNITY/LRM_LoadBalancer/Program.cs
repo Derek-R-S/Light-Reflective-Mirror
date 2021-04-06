@@ -48,7 +48,7 @@ namespace LightReflectiveMirror.LoadBalancing
                     WriteLogMessage("Endpoint server started unsuccessfully", ConsoleColor.Red);
             }
 
-            var pingThread = new Thread(new ThreadStart(() => PingServers()));
+            var pingThread = new Thread(new ThreadStart(PingServers));
             pingThread.Start();
 
             // keep console alive
@@ -99,7 +99,7 @@ namespace LightReflectiveMirror.LoadBalancing
             }
         }
 
-        async Task PingServers()
+        async void PingServers()
         {
             while (true)
             {
@@ -154,7 +154,7 @@ namespace LightReflectiveMirror.LoadBalancing
  | |      | |  | |    /  \    | |  | |                    w /|                
  | |      | |  | |   / /\ \   | |  | |                     | \                
  | |____  | |__| |  / ____ \  | |__| |                    m  m copyright monkesoft 2021                
- |______|  \____/  /_/    \_\ |_____/                                                                                                                                             
+ |______|  \____/  /_/    \_\ |_____/    
   ____               _                   _   _    _____   ______   _____  
  |  _ \      /\     | |          /\     | \ | |  / ____| |  ____| |  __ \ 
  | |_) |    /  \    | |         /  \    |  \| | | |      | |__    | |__) |

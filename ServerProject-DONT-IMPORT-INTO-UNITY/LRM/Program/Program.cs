@@ -110,11 +110,12 @@ namespace LightReflectiveMirror
                         if (conf.UseEndpoint)
                         {
                             WriteLogMessage("\nStarting Endpoint Service... ", ConsoleColor.White, true);
-                            var endpoint = new EndpointServer();
+                            var endpointService = new EndpointServer();
 
-                            if (endpoint.Start(conf.EndpointPort))
+                            if (endpointService.Start(conf.EndpointPort))
                             {
                                 WriteLogMessage("OK", ConsoleColor.Green);
+                                Endpoint.RoomsModified();
                             }
                             else
                             {

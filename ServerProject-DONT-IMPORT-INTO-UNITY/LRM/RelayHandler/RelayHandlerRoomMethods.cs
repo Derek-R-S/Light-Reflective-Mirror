@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LightReflectiveMirror.Endpoints;
+using System;
 using System.Collections.Generic;
 using System.Net;
 
@@ -75,6 +76,7 @@ namespace LightReflectiveMirror
 
                             _sendBuffers.Return(sendJoinBuffer);
 
+                            Endpoint.RoomsModified();
                             return;
                         }
                         else
@@ -86,6 +88,8 @@ namespace LightReflectiveMirror
                             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
                             Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
                             _sendBuffers.Return(sendJoinBuffer);
+
+                            Endpoint.RoomsModified();
                             return;
                         }
                     }
@@ -151,6 +155,8 @@ namespace LightReflectiveMirror
 
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
             _sendBuffers.Return(sendBuffer);
+
+            Endpoint.RoomsModified();
         }
 
         /// <summary>
@@ -174,6 +180,7 @@ namespace LightReflectiveMirror
                     _sendBuffers.Return(sendBuffer);
                     rooms[i].clients.Clear();
                     rooms.RemoveAt(i);
+                    Endpoint.RoomsModified();
                     return;
                 }
                 else
@@ -191,6 +198,7 @@ namespace LightReflectiveMirror
 
                         Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
                         _sendBuffers.Return(sendBuffer);
+                        Endpoint.RoomsModified();
                     }
                 }
             }
