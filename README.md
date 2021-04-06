@@ -4,7 +4,6 @@
 ![Logo](LRM.png)
 
 
-
 # Light Reflective Mirror
 
 LRM Node 
