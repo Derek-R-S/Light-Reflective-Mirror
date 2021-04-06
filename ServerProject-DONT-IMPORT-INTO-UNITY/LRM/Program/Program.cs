@@ -197,6 +197,9 @@ namespace LightReflectiveMirror
             try
             {
                 // replace hard coded value for config value later
+                if (conf.LoadBalancerAddress.ToLower() == "localhost")
+                    conf.LoadBalancerAddress = "127.0.0.1";
+
                 var uri = new Uri($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/auth");
                 string endpointPort = conf.EndpointPort.ToString();
                 string gamePort = 7777.ToString();
