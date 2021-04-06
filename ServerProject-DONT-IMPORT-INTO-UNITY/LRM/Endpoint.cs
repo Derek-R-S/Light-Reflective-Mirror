@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.Endpoints
@@ -22,7 +23,7 @@ namespace LightReflectiveMirror.Endpoints
     [RestResource]
     public class Endpoint
     {
-        private List<Room> _rooms { get => Program.instance.GetRooms(); }
+        private List<Room> _rooms { get => Program.instance.GetRooms().Where(x => x.isPublic).ToList(); }
 
         private RelayStats _stats { get => new RelayStats 
         {

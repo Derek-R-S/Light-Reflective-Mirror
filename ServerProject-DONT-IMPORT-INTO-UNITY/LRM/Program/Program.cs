@@ -13,32 +13,8 @@ using Newtonsoft.Json;
 
 namespace LightReflectiveMirror
 {
-    class Program
+    partial class Program
     {
-        public static Transport transport;
-        public static Program instance;
-        public static Config conf;
-
-        private RelayHandler _relay;
-        private MethodInfo _awakeMethod;
-        private MethodInfo _startMethod;
-        private MethodInfo _updateMethod;
-        private MethodInfo _lateUpdateMethod;
-
-        private DateTime _startupTime;
-        public static string publicIP;
-        private List<int> _currentConnections = new List<int>();
-        public Dictionary<int, IPEndPoint> NATConnections = new Dictionary<int, IPEndPoint>();
-        private BiDictionary<int, string> _pendingNATPunches = new BiDictionary<int, string>();
-        private int _currentHeartbeatTimer = 0;
-
-        private byte[] _NATRequest = new byte[500];
-        private int _NATRequestPosition = 0;
-
-        private UdpClient _punchServer;
-
-        private const string CONFIG_PATH = "config.json";
-
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
         public int GetConnections() => _currentConnections.Count;
@@ -245,84 +221,12 @@ namespace LightReflectiveMirror
 
         }
 
-        void RunNATPunchLoop()
-        {
-            WriteLogMessage("OK\n", ConsoleColor.Green);
-            IPEndPoint remoteEndpoint = new(IPAddress.Any, conf.NATPunchtroughPort);
-
-            // Stock Data server sends to everyone:
-            var serverResponse = new byte[1] { 1 };
-
-            byte[] readData;
-            bool isConnectionEstablishment;
-            int pos;
-            string connectionID;
-
-            while (true)
-            {
-                readData = _punchServer.Receive(ref remoteEndpoint);
-                pos = 0;
-                try
-                {
-                    isConnectionEstablishment = readData.ReadBool(ref pos);
-
-                    if (isConnectionEstablishment)
-                    {
-                        connectionID = readData.ReadString(ref pos);
-
-                        if (_pendingNATPunches.TryGetBySecond(connectionID, out pos))
-                        {
-                            NATConnections.Add(pos, new IPEndPoint(remoteEndpoint.Address, remoteEndpoint.Port));
-                            _pendingNATPunches.Remove(pos);
-                            Console.WriteLine("Client Successfully Established Puncher Connection. " + remoteEndpoint.ToString());
-                        }
-                    }
-
-                    _punchServer.Send(serverResponse, 1, remoteEndpoint);
-                }
-                catch
-                {
-                    // ignore, packet got fucked up or something.
-                }
-            }
-        }
-
-        static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White, bool oneLine = false)
-        {
-            Console.ForegroundColor = color;
-            if (oneLine)
-                Console.Write(message);
-            else
-                Console.WriteLine(message);
-        }
-
         void CheckMethods(Type type)
         {
             _awakeMethod         = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             _startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             _updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             _lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        }
-
-        void WriteTitle()
-        {
-            string t = @"  
-                           w  c(..)o   (
-  _       _____   __  __    \__(-)    __)
- | |     |  __ \ |  \/  |       /\   (
- | |     | |__) || \  / |      /(_)___)
- | |     |  _  / | |\/| |      w /|
- | |____ | | \ \ | |  | |       | \
- |______||_|  \_\|_|  |_|      m  m copyright monkesoft 2021
-
-";
-
-            string load = $"Chimp Event Listener Initializing... OK" +
-                            "\nHarambe Memorial Initializing...     OK" +
-                            "\nBananas Initializing...              OK\n";
-
-            WriteLogMessage(t, ConsoleColor.Green);
-            WriteLogMessage(load, ConsoleColor.Cyan);
         }
     }
 }
