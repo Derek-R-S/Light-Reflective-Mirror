@@ -24,7 +24,7 @@ namespace LightReflectiveMirror
             instance = this;
             _startupTime = DateTime.Now;
             using (WebClient wc = new WebClient())
-                publicIP = wc.DownloadString("http://icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
+                publicIP = wc.DownloadString("http://ipv4.icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
 
             if (!File.Exists(CONFIG_PATH))
             {
