@@ -103,6 +103,14 @@ namespace LightReflectiveMirror
             clientToServerTransport.ClientConnect(serverIP);
         }
 
+        private void DisconnectFromRelay()
+        {
+            if (IsAuthenticated())
+            {
+                clientToServerTransport.ClientDisconnect();
+            }
+        }
+
         void SendHeartbeat()
         {
             if (_connectedToRelay)
@@ -316,6 +324,17 @@ namespace LightReflectiveMirror
 
                 clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
             }
+        }
+
+        Room GetServerForID(int serverID)
+        {
+            for(int i = 0; i < relayServerList.Count; i++)
+            {
+                if(relayServerList[i].serverId == serverId)
+                    return relayServerList[i];
+            }
+
+            throw new Exception("LRM | An attempt was made to connect to a server which does not exist!");
         }
 
         void SendAuthKey()

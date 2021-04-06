@@ -58,6 +58,36 @@ namespace LightReflectiveMirror
             }
         }
 
+        IEnumerator JoinOtherRelayAndMatch(Room room)
+        {
+            // Wait for disconnection
+            DisconnectFromRelay();
+
+            while (IsAuthenticated())
+                yield return new WaitForEndOfFrame();
+
+            endpointServerPort = room.relayInfo.EndpointPort;
+            Connect(room.relayInfo.Address, room.relayInfo.Port);
+
+            while (!IsAuthenticated())
+                yield return new WaitForEndOfFrame();
+
+            int pos = 0;
+            _directConnected = false;
+            _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
+            _clientSendBuffer.WriteInt(ref pos, room.serverId);
+            _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
+
+            if (GetLocalIp() == null)
+                _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+            else
+                _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+
+            _isClient = true;
+
+            clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
+        }
+
         IEnumerator GetServerList()
         {
             if (!useLoadBalancer)
