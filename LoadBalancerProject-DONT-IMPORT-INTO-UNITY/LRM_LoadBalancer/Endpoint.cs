@@ -17,6 +17,17 @@ namespace LightReflectiveMirror.LoadBalancing
     [RestResource]
     public class Endpoint
     {
+        private LoadBalancerStats _stats
+        {
+            get => new()
+            {
+                NodeCount = Program.instance.availableRelayServers.Count,
+                Uptime = DateTime.Now - Program.startupTime,
+                CCU = Program.instance.GetTotalCCU(),
+                TotalServerCount = Program.instance.GetTotalServers(),
+            };
+        }
+
         /// <summary>
         /// Sent from an LRM server node
         /// adds it to the list if authenticated.
@@ -135,6 +146,17 @@ namespace LightReflectiveMirror.LoadBalancing
             // no servers or maybe no relays, fuck you
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.NoContent);
+        }
+
+        /// <summary>
+        /// Returns stats. you're welcome
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        [RestRoute("Get", "/api/stats/")]
+        public async Task GetStats(IHttpContext context)
+        {
+            await context.Response.SendResponseAsync(JsonConvert.SerializeObject(_stats));
         }
     }
 
