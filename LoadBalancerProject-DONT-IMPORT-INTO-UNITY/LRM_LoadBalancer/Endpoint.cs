@@ -39,10 +39,10 @@ namespace LightReflectiveMirror.LoadBalancing
         public async Task ReceiveAuthKey(IHttpContext context)
         {
             var req = context.Request;
-            string receivedAuthKey = req.Headers["Auth"];
-            string endpointPort = req.Headers["EndpointPort"];
-            string gamePort = req.Headers["GamePort"];
-            string publicIP = req.Headers["PIP"];
+            string receivedAuthKey = req.Headers["x-Auth"];
+            string endpointPort = req.Headers["x-EndpointPort"];
+            string gamePort = req.Headers["x-GamePort"];
+            string publicIP = req.Headers["x-PIP"];
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
             Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
