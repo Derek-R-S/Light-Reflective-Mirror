@@ -1,4 +1,4 @@
-﻿using Grapevine;
+using Grapevine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -83,8 +83,12 @@ namespace LightReflectiveMirror.LoadBalancing
             if (lowest.Key.Address != "Dummy")
             {
                 // ping server to ensure its online.
-                await Program.instance.ManualPingServer(lowest.Key.Address, lowest.Key.Port);
-                await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
+                var chosenServer = await Program.instance.ManualPingServer(lowest.Key.Address, lowest.Key.EndpointPort);
+ 
+                if(chosenServer.HasValue)
+                    await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
+                else
+                    await context.Response.SendResponseAsync(HttpStatusCode.BadGateway);
             }
             else
             {
