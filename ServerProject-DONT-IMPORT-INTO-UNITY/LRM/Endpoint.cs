@@ -103,8 +103,9 @@ namespace LightReflectiveMirror.Endpoints
 
                 return true;
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e);
                 return false;
             }
 

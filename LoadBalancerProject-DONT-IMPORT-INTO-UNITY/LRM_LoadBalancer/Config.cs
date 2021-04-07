@@ -11,7 +11,6 @@ namespace LightReflectiveMirror.LoadBalancing
         public int ConnectedServerPingRate = 10000;
         public string AuthKey = "AuthKey";
         public ushort EndpointPort = 7070;
-        public ushort RelayEndpointPort = 8080;
         public bool ShowDebugLogs = false;
     }
 }
