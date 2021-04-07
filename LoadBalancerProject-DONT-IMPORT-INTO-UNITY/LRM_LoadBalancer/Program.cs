@@ -110,12 +110,16 @@ namespace LightReflectiveMirror.LoadBalancing
                 try
                 {
                     string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}/api/servers");
-                    return JsonConvert.DeserializeObject<List<Room>>(receivedStats);
+                    var stats = JsonConvert.DeserializeObject<List<Room>>(receivedStats);
+                    if (stats == null)
+                        return new List<Room>();
+                    else
+                        return stats;
                 }
                 catch (Exception e)
                 {
                     // Server failed to respond
-                    return null;
+                    return new List<Room>();
                 }
             }
         }
