@@ -6,7 +6,7 @@
 
 # Light Reflective Mirror
 
-LRM Node 
+LRM Node / MultiCompiled
 
 [![Build status](http://monk3.xyz:90/api/projects/status/p5g03jifksxvkjct/branch/main?retina=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror/branch/main) 
 
