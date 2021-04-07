@@ -187,7 +187,7 @@ namespace LightReflectiveMirror
 
                     if (conf.UseLoadBalancer)
                     {
-                        if (Endpoint.lastPing.AddSeconds(60) > DateTime.Now)
+                        if (DateTime.Now > Endpoint.lastPing.AddSeconds(60))
                         {
                             // Dont await that on main thread. It would cause a lag spike for clients.
                             RegisterSelfToLoadBalancer();
