@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Linq;
+using System.Net;
 
 namespace LightReflectiveMirror
 {
@@ -100,8 +101,13 @@ namespace LightReflectiveMirror
             else
             {
                 // ping load balancer here
+                using (WebClient wc = new())
+                {
+                    var uri = new Uri($"http://{Program.conf.LoadBalancerAddress}:{Program.conf.LoadBalancerPort}/api/get/id");
+                    string randomID = wc.DownloadString(uri).Replace("\\r", "").Replace("\\n", "").Trim();
 
-                return "";
+                    return randomID;
+                }
             }
         }
 

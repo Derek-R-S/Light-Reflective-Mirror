@@ -156,6 +156,12 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             await context.Response.SendResponseAsync(JsonConvert.SerializeObject(_stats));
         }
+
+        [RestRoute("Get", "/api/get/id")]
+        public async Task GetServerID(IHttpContext context)
+        {
+            await context.Response.SendResponseAsync(Program.instance.GenerateServerID());
+        }
     }
 
     #region Startup
