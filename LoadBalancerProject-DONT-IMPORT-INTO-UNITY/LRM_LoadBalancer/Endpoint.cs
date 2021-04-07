@@ -177,7 +177,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 return;
             }
 
-            KeyValuePair<RelayAddress, RelayServerInfo> lowest = new(new RelayAddress { Address = "Dummy" }, new RelayServerInfo { ConnectedClients = int.MaxValue });
+            KeyValuePair<RelayAddress, RelayServerInfo> lowest = new(new RelayAddress { address = "Dummy" }, new RelayServerInfo { connectedClients = int.MaxValue });
 
             for (int i = 0; i < servers.Count; i++)
             {

@@ -11,7 +11,7 @@ namespace LightReflectiveMirror.LoadBalancing
             long temp = 0;
 
             foreach (var item in availableRelayServers)
-                temp += item.Value.ConnectedClients;
+                temp += item.Value.connectedClients;
 
             return temp;
         }
@@ -21,7 +21,7 @@ namespace LightReflectiveMirror.LoadBalancing
             int temp = 0;
 
             foreach (var item in availableRelayServers)
-                temp += item.Value.RoomCount;
+                temp += item.Value.roomCount;
 
             return temp;
         }
