@@ -340,6 +340,7 @@ namespace LightReflectiveMirror
                     return relayServerList[i];
             }
 
+            OnClientDisconnected?.Invoke();
             throw new Exception("LRM | An attempt was made to connect to a server which does not exist!");
         }
 
