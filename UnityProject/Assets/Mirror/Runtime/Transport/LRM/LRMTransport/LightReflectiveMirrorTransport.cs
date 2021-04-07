@@ -1,16 +1,11 @@
 using kcp2k;
 using Mirror;
 using Mirror.SimpleWeb;
-using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.Networking;
 
 namespace LightReflectiveMirror
 {
@@ -21,6 +16,10 @@ namespace LightReflectiveMirror
         public bool IsAuthenticated() => _isAuthenticated;
         private void Awake()
         {
+#if !NET_4_6
+            throw new Exception("LRM | Please switch to .NET 4.x for LRM to function properly!");
+#endif
+
             if (clientToServerTransport is LightReflectiveMirrorTransport)
                 throw new Exception("Haha real funny... Use a different transport.");
 
