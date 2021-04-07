@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LRM", "LRM\LRM.csproj", "{BA0E55C8-6B24-4690-AC55-1DDDB4F7C05F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LRM", "LRM\LRM.csproj", "{BA0E55C8-6B24-4690-AC55-1DDDB4F7C05F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiCompiled", "MultiCompiled\MultiCompiled.csproj", "{E4D2AED5-E46A-49BE-B7F1-6BF8A5ADE572}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{BA0E55C8-6B24-4690-AC55-1DDDB4F7C05F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA0E55C8-6B24-4690-AC55-1DDDB4F7C05F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA0E55C8-6B24-4690-AC55-1DDDB4F7C05F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4D2AED5-E46A-49BE-B7F1-6BF8A5ADE572}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4D2AED5-E46A-49BE-B7F1-6BF8A5ADE572}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4D2AED5-E46A-49BE-B7F1-6BF8A5ADE572}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4D2AED5-E46A-49BE-B7F1-6BF8A5ADE572}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
