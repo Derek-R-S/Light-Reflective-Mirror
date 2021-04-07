@@ -59,6 +59,7 @@ namespace LightReflectiveMirror
             _connectedToRelay = false;
             _isAuthenticated = false;
             diconnectedFromRelay?.Invoke();
+            serverStatus = "Disconnected from relay.";
         }
 
         public void ConnectToRelay()
@@ -101,7 +102,7 @@ namespace LightReflectiveMirror
             
 
             this.serverIP = serverIP;
-
+            serverStatus = "Connecting to relay...";
             _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
             clientToServerTransport.ClientConnect(serverIP);
         }
@@ -150,9 +151,11 @@ namespace LightReflectiveMirror
                 switch (opcode)
                 {
                     case OpCodes.Authenticated:
+                        serverStatus = "Authenticated! Good to go!";
                         _isAuthenticated = true;
                         break;
                     case OpCodes.AuthenticationRequest:
+                        serverStatus = "Sent authentication to relay...";
                         SendAuthKey();
                         break;
                     case OpCodes.GetData:

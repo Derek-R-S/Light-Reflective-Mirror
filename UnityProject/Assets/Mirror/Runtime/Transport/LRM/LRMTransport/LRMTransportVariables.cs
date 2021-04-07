@@ -37,6 +37,7 @@ namespace LightReflectiveMirror
         public List<Room> relayServerList { private set; get; } = new List<Room>();
 
         // Current Server Information
+        public string serverStatus = "Not Started.";
         public int serverId = -1;
 
         private LRMDirectConnectModule _directConnectModule;

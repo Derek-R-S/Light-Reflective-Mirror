@@ -21,7 +21,7 @@ namespace LightReflectiveMirror
         IEnumerator RelayConnect()
         {
             string url = $"http://{loadBalancerAddress}:{loadBalancerPort}/api/join/";
-
+            serverStatus = "Waiting for LLB...";
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
                 // Request and wait for the desired page.

@@ -231,6 +231,7 @@ namespace LightReflectiveMirror
                         // Other tab...
 
                         GUI.enabled = false;
+                        EditorGUILayout.TextField("Server Status", lrm.serverStatus);
                         EditorGUILayout.TextField("Server ID", lrm.serverId == -1 ? "Not Hosting" : lrm.serverId.ToString());
                         GUI.enabled = true;
 
