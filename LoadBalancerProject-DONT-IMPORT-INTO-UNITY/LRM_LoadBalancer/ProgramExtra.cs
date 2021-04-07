@@ -50,7 +50,7 @@ namespace LightReflectiveMirror.LoadBalancing
         /// <returns></returns>
         bool DoesServerIdExist(string id)
         { 
-            var infos = new List<RelayServerInfo>(availableRelayServers.Values.ToList());
+            var infos = availableRelayServers.Values;
 
             foreach (var info in infos)
             {

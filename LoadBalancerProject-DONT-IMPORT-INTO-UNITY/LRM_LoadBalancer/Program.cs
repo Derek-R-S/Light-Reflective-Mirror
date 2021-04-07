@@ -88,7 +88,12 @@ namespace LightReflectiveMirror.LoadBalancing
                 {
                     string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}{API_PATH}");
 
-                    return JsonConvert.DeserializeObject<RelayServerInfo>(receivedStats);
+                    var stats = JsonConvert.DeserializeObject<RelayServerInfo>(receivedStats);
+
+                    if (stats.serversConnectedToRelay == null)
+                        stats.serversConnectedToRelay = new List<Room>();
+
+                    return stats;
                 }
                 catch (Exception e)
                 {
