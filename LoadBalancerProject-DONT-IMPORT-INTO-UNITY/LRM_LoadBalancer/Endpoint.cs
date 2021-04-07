@@ -184,8 +184,8 @@ namespace LightReflectiveMirror.LoadBalancing
                     services.Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.None);
                 }, (server) =>
                 {
-                    server.Prefixes.Add($"http://{GetLocalIp()}:{port}/");
-                    server.Prefixes.Add($"http://*:{port}/");
+                    foreach(string ip in GetLocalIps())
+                        server.Prefixes.Add($"http://{ip}:{port}/");
                 }).Build();
 
                 server.Router.Options.SendExceptionMessages = false;
@@ -199,19 +199,20 @@ namespace LightReflectiveMirror.LoadBalancing
             }
         }
 
-        private static string GetLocalIp()
+        private static List<string> GetLocalIps()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
+            List<string> bindableIPv4Addresses = new();
 
             foreach (var ip in host.AddressList)
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork && ip.ToString() != "127.0.0.1")
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    return ip.ToString();
+                    bindableIPv4Addresses.Add(ip.ToString());
                 }
             }
 
-            return null;
+            return bindableIPv4Addresses;
         }
         #endregion
 
