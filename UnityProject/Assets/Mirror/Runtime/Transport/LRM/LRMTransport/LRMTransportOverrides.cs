@@ -58,9 +58,9 @@ namespace LightReflectiveMirror
 
         public override void ClientConnect(string address)
         {
-            if (!Available() || !int.TryParse(address, out _cachedHostID))
+            if (!Available())
             {
-                Debug.Log("Not connected to relay or invalid server id!");
+                Debug.Log("Not connected to relay!");
                 OnClientDisconnected?.Invoke();
                 return;
             }
@@ -68,14 +68,14 @@ namespace LightReflectiveMirror
             if (_isClient || _isServer)
                 throw new Exception("Cannot connect while hosting/already connected!");
 
-            var room = GetServerForID(_cachedHostID);
+            var room = GetServerForID(address);
 
             if (!useLoadBalancer || room.relayInfo.Address == serverIP)
             {
                 int pos = 0;
                 _directConnected = false;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
-                _clientSendBuffer.WriteInt(ref pos, _cachedHostID);
+                _clientSendBuffer.WriteString(ref pos, address);
                 _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
 
                 if (GetLocalIp() == null)

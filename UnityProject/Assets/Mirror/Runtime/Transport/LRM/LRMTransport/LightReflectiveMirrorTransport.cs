@@ -189,7 +189,7 @@ namespace LightReflectiveMirror
                         }
                         break;
                     case OpCodes.RoomCreated:
-                        serverId = data.ReadInt(ref pos);
+                        serverId = data.ReadString(ref pos);
                         break;
                     case OpCodes.ServerJoined:
                         int clientId = data.ReadInt(ref pos);
@@ -332,7 +332,7 @@ namespace LightReflectiveMirror
             }
         }
 
-        Room GetServerForID(int serverID)
+        Room GetServerForID(string serverID)
         {
             for(int i = 0; i < relayServerList.Count; i++)
             {
@@ -378,7 +378,7 @@ namespace LightReflectiveMirror
     {
         public string serverName;
         public int maxPlayers;
-        public int serverId;
+        public string serverId;
         public string serverData;
         public int hostId;
         public List<int> clients;

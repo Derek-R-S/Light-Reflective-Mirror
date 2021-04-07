@@ -38,7 +38,7 @@ namespace LightReflectiveMirror
 
         // Current Server Information
         public string serverStatus = "Not Started.";
-        public int serverId = -1;
+        public string serverId = string.Empty;
 
         private LRMDirectConnectModule _directConnectModule;
 
@@ -50,7 +50,6 @@ namespace LightReflectiveMirror
         private bool _isAuthenticated = false;
         private int _currentMemberId;
         private bool _callbacksInitialized = false;
-        private int _cachedHostID;
         private UdpClient _NATPuncher;
         private IPEndPoint _NATIP;
         private IPEndPoint _relayPuncherIP;

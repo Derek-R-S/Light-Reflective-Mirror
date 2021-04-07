@@ -75,7 +75,7 @@ namespace LightReflectiveMirror
             int pos = 0;
             _directConnected = false;
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
-            _clientSendBuffer.WriteInt(ref pos, room.serverId);
+            _clientSendBuffer.WriteString(ref pos, room.serverId);
             _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
 
             if (GetLocalIp() == null)
