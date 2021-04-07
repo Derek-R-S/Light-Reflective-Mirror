@@ -48,7 +48,7 @@ namespace LightReflectiveMirror
                         int sendJoinPos = 0;
                         byte[] sendJoinBuffer = _sendBuffers.Rent(500);
 
-                        if (canDirectConnect && Program.instance.NATConnections.ContainsKey(clientId))
+                        if (canDirectConnect && Program.instance.NATConnections.ContainsKey(clientId) && rooms[i].supportsDirectConnect)
                         {
                             sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
 
