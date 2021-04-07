@@ -12,6 +12,9 @@ namespace LightReflectiveMirror.LoadBalancing
         public int RoomCount;
         public int PublicRoomCount;
         public TimeSpan Uptime;
+
+        [JsonIgnore]
+        public List<Room> serversConnectedToRelay;
     }
 
     [Serializable]
@@ -37,7 +40,7 @@ namespace LightReflectiveMirror.LoadBalancing
     [Serializable]
     public struct Room
     {
-        public int serverId;
+        public string serverId;
         public int hostId;
         public string serverName;
         public string serverData;

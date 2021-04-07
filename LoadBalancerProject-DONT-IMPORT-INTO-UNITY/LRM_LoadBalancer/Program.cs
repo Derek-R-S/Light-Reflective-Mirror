@@ -135,14 +135,18 @@ namespace LightReflectiveMirror.LoadBalancing
                             var serverStats = wc.DownloadString(url);
                             var deserializedData = JsonConvert.DeserializeObject<RelayServerInfo>(serverStats);
 
-                            Logger.ForceLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
+                            Logger.WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
+
+                            // get current server list
+                            deserializedData.serversConnectedToRelay = await GetServerListFromIndividualRelay(keys[i].Address, keys[i].Port);
 
                             if (availableRelayServers.ContainsKey(keys[i]))
                                 availableRelayServers[keys[i]] = deserializedData;
                             else
                                 availableRelayServers.Add(keys[i], deserializedData);
+
                         }
-                        catch (Exception ex)
+                        catch
                         {
                             // server doesnt exist anymore probably
                             Logger.WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
