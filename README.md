@@ -1,4 +1,25 @@
+
+
+![Logo](LRM.png)
+
+
+
 # Light Reflective Mirror
+
+[![Maintainability](https://api.codeclimate.com/v1/badges/954d1b30c2da8f61037e/maintainability)](https://codeclimate.com/github/Derek-R-S/Light-Reflective-Mirror/maintainability)
+
+LRM Node / MultiCompiled
+
+[![Build status](http://monk3.xyz:90/api/projects/status/p5g03jifksxvkjct/branch/main?retina=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror/branch/main) 
+
+
+LoadBalancer 
+
+[![Build status](http://monk3.xyz:90/api/projects/status/kh6awelf16hl5um4/branch/main?retina=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror-canqw/branch/main)
+
+Unity Package
+
+[![Build status](http://monk3.xyz:90/api/projects/status/n7kiywl2ls67pn5c?retina=true)](http://monk3.xyz:90/project/AppVeyor/light-reflective-mirror-wdkoo)
 
 ## What
 Light Reflective Mirror is a transport for Mirror Networking which relays network traffic through your own servers. This allows you to have clients host game servers and not worry about NAT/Port Forwarding, etc. There are still features I plan on adding but it still is completely stable in its current state.
@@ -8,13 +29,9 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 * Built in server list!
 * Relay password to stop other games from stealing your precious relay!
 * Relay supports connecting users without them needing to port forward!
-* NAT Punchtrough
+* NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone)
 * Direct Connecting
-
-## Plans
-
-For the future I plan on adding features such as:
-* Multi Relay server setup for load balancing (It will split players up between multiple relay servers to make sure one single relay server isnt doing all the heavy lifting)
+* Load Balancing with multi-relay setup
 
 ## How does it work?
 
@@ -67,11 +84,10 @@ TransportDLL - This is the name of the dll of the compiled transport dll.
 TransportClass - The class name of the transport inside the DLL, Including namespaces!
 By default, there are 5 compiled transports in the MultiCompiled dll.
 To switch between them you have the following options:
-* Mirror.LiteNetLibTransport
+
 * Mirror.TelepathyTransport
 * kcp2k.KcpTransport
 * Mirror.SimpleWebTransport
-* Mirror.MultiplexTransport
 
 AuthenticationKey - This is the key the clients need to have on their inspector. It cannot be blank.
 

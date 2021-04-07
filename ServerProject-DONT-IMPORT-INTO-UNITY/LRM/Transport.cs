@@ -159,7 +159,7 @@ namespace Mirror
         /// <summary>
         /// Start listening for clients
         /// </summary>
-        public abstract void ServerStart();
+        public abstract void ServerStart(ushort port);
 
         /// <summary>
         /// Send data to a client.

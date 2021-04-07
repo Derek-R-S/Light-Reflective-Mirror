@@ -12,6 +12,7 @@ namespace LightReflectiveMirror
         public string TransportDLL = "MultiCompiled.dll";
         public string TransportClass = "Mirror.SimpleWebTransport";
         public string AuthenticationKey = "Secret Auth Key";
+        public ushort TransportPort = 7777;
         public int UpdateLoopTime = 10;
         public int UpdateHeartbeatInterval = 100;
 
@@ -35,5 +36,6 @@ namespace LightReflectiveMirror
         public string LoadBalancerAuthKey = "AuthKey";
         public string LoadBalancerAddress = "127.0.0.1";
         public ushort LoadBalancerPort = 7070;
+        public LRMRegions LoadBalancerRegion = LRMRegions.NorthAmerica;
     }
 }

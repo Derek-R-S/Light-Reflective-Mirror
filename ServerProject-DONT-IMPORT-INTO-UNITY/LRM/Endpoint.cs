@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.Endpoints
@@ -22,7 +23,11 @@ namespace LightReflectiveMirror.Endpoints
     [RestResource]
     public class Endpoint
     {
-        private List<Room> _rooms { get => Program.instance.GetRooms(); }
+        private static string _cachedServerList = "[]";
+        private static string _cachedCompressedServerList;
+        public static DateTime lastPing = DateTime.Now;
+
+        private static List<Room> _rooms { get => Program.instance.GetRooms().Where(x => x.isPublic).ToList(); }
 
         private RelayStats _stats { get => new RelayStats 
         {
@@ -32,9 +37,19 @@ namespace LightReflectiveMirror.Endpoints
             Uptime = Program.instance.GetUptime()
         }; }
 
+        public static void RoomsModified()
+        {
+            _cachedServerList = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
+            _cachedCompressedServerList = _cachedServerList.Compress();
+
+            if (Program.conf.UseLoadBalancer)
+                Program.instance.UpdateLoadbalancerServers();
+        }
+
         [RestRoute("Get", "/api/stats")]
         public async Task Stats(IHttpContext context)
         {
+            lastPing = DateTime.Now;
             string json = JsonConvert.SerializeObject(_stats, Formatting.Indented);
             await context.Response.SendResponseAsync(json);
         }
@@ -44,8 +59,7 @@ namespace LightReflectiveMirror.Endpoints
         {
             if (Program.conf.EndpointServerList)
             {
-                string json = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
-                await context.Response.SendResponseAsync(json);
+                await context.Response.SendResponseAsync(_cachedServerList);
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
@@ -56,8 +70,7 @@ namespace LightReflectiveMirror.Endpoints
         {
             if (Program.conf.EndpointServerList)
             {
-                string json = JsonConvert.SerializeObject(_rooms);
-                await context.Response.SendResponseAsync(json.Compress());
+                await context.Response.SendResponseAsync(_cachedCompressedServerList);
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
