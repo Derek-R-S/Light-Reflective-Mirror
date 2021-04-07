@@ -1,3 +1,4 @@
+using LightReflectiveMirror.Debug;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -30,26 +31,29 @@ namespace LightReflectiveMirror.LoadBalancing
         public async Task MainAsync()
         {
             WriteTitle();
+
             instance = this;
             startupTime = DateTime.Now;
 
             if (!File.Exists(CONFIG_PATH))
             {
                 File.WriteAllText(CONFIG_PATH, JsonConvert.SerializeObject(new Config(), Formatting.Indented));
-                WriteLogMessage("A config.json file was generated. Please configure it to the proper settings and re-run!", ConsoleColor.Yellow);
+                Logger.ForceLogMessage("A config.json file was generated. Please configure it to the proper settings and re-run!", ConsoleColor.Yellow);
                 Console.ReadKey();
                 Environment.Exit(0);
             }
             else
             {
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
+                Logger.ConfigureLogger(new Logger.LogConfiguration { sendLogs = conf.ShowDebugLogs });
+
                 _pingDelay = conf.ConnectedServerPingRate;
                 showDebugLogs = conf.ShowDebugLogs;
 
                 if (new EndpointServer().Start(conf.EndpointPort))
-                    WriteLogMessage("Endpoint server started successfully", ConsoleColor.Green);
+                    Logger.ForceLogMessage("Endpoint server started successfully", ConsoleColor.Green);
                 else
-                    WriteLogMessage("Endpoint server started unsuccessfully", ConsoleColor.Red);
+                    Logger.ForceLogMessage("Endpoint server started unsuccessfully", ConsoleColor.Red);
             }
 
             var pingThread = new Thread(new ThreadStart(PingServers));
@@ -66,7 +70,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             if (availableRelayServers.ContainsKey(relayAddr))
             {
-                WriteLogMessage($"LRM Node {serverIP}:{port} tried to register while already registered!");
+                Logger.ForceLogMessage($"LRM Node {serverIP}:{port} tried to register while already registered!");
                 return;
             }
 
@@ -115,8 +119,7 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             while (true)
             {
-                if (showDebugLogs)
-                    WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
+                Logger.WriteLogMessage("Pinging " + availableRelayServers.Count + " available relays");
 
                 // Create a new list so we can modify the collection in our loop.
                 var keys = new List<RelayAddress>(availableRelayServers.Keys);
@@ -132,8 +135,7 @@ namespace LightReflectiveMirror.LoadBalancing
                             var serverStats = wc.DownloadString(url);
                             var deserializedData = JsonConvert.DeserializeObject<RelayServerInfo>(serverStats);
 
-                            if (showDebugLogs)
-                                WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
+                            Logger.ForceLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
 
                             if (availableRelayServers.ContainsKey(keys[i]))
                                 availableRelayServers[keys[i]] = deserializedData;
@@ -143,9 +145,7 @@ namespace LightReflectiveMirror.LoadBalancing
                         catch (Exception ex)
                         {
                             // server doesnt exist anymore probably
-                            // do more shit here
-                            if (showDebugLogs)
-                                WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
+                            Logger.WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
                             availableRelayServers.Remove(keys[i]);
                         }
                     }
@@ -182,19 +182,9 @@ namespace LightReflectiveMirror.LoadBalancing
                             "\nHarambe Memorial Initializing...     OK" +
                             "\nBananas Initializing...              OK\n";
 
-            WriteLogMessage(t, ConsoleColor.Green);
-            WriteLogMessage(load, ConsoleColor.Cyan);
+            Logger.ForceLogMessage(t, ConsoleColor.Green);
+            Logger.ForceLogMessage(load, ConsoleColor.Cyan);
         }
-
-        static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White, bool oneLine = false)
-        {
-            Console.ForegroundColor = color;
-            if (oneLine)
-                Console.Write(message);
-            else
-                Console.WriteLine(message);
-        }
-
     }
 
 }

@@ -215,10 +215,10 @@ namespace LightReflectiveMirror
                 string gamePort = 7777.ToString();
                 HttpWebRequest authReq = (HttpWebRequest)WebRequest.Create(uri);
 
-                authReq.Headers.Add("Auth", conf.LoadBalancerAuthKey);
-                authReq.Headers.Add("EndpointPort", endpointPort);
-                authReq.Headers.Add("GamePort", gamePort);
-                authReq.Headers.Add("PIP", publicIP); // Public IP
+                authReq.Headers.Add("x-Auth", conf.LoadBalancerAuthKey);
+                authReq.Headers.Add("x-EndpointPort", endpointPort);
+                authReq.Headers.Add("x-GamePort", gamePort);
+                authReq.Headers.Add("x-PIP", publicIP); // Public IP
 
                 var res = await authReq.GetResponseAsync();
 
