@@ -225,13 +225,14 @@ namespace LightReflectiveMirror
 
                 var uri = new Uri($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/auth");
                 string endpointPort = conf.EndpointPort.ToString();
-                string gamePort = 7777.ToString();
+                string gamePort = "7777";
                 HttpWebRequest authReq = (HttpWebRequest)WebRequest.Create(uri);
 
                 authReq.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
                 authReq.Headers.Add("x-EndpointPort", endpointPort);
                 authReq.Headers.Add("x-GamePort", gamePort);
                 authReq.Headers.Add("x-PIP", publicIP); // Public IP
+                authReq.Headers.Add("x-Region", ((int)conf.LoadBalancerRegion).ToString());
 
                 var res = await authReq.GetResponseAsync();
 

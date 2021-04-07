@@ -18,16 +18,30 @@ namespace LightReflectiveMirror.LoadBalancing
     [RestResource]
     public class Endpoint
     {
-        public static string cachedServerList = "[]";
+        public static string allCachedServers = "[]";
+        public static string NorthAmericaCachedServers = "[]";
+        public static string SouthAmericaCachedServers = "[]";
+        public static string EuropeCachedServers = "[]";
+        public static string AsiaCachedServers = "[]";
+        public static string AfricaCachedServers = "[]";
+        public static string OceaniaCachedServers = "[]";
+
+        private static List<Room> northAmericaServers = new();
+        private static List<Room> southAmericaServers = new();
+        private static List<Room> europeServers = new();
+        private static List<Room> africaServers = new();
+        private static List<Room> asiaServers = new();
+        private static List<Room> oceaniaServers = new();
+        private static List<Room> allServers = new();
 
         private LoadBalancerStats _stats
         {
             get => new()
             {
-                NodeCount = Program.instance.availableRelayServers.Count,
-                Uptime = DateTime.Now - Program.startupTime,
+                nodeCount = Program.instance.availableRelayServers.Count,
+                uptime = DateTime.Now - Program.startupTime,
                 CCU = Program.instance.GetTotalCCU(),
-                TotalServerCount = Program.instance.GetTotalServers(),
+                totalServerCount = Program.instance.GetTotalServers(),
             };
         }
 
@@ -45,12 +59,14 @@ namespace LightReflectiveMirror.LoadBalancing
             string endpointPort = req.Headers["x-EndpointPort"];
             string gamePort = req.Headers["x-GamePort"];
             string publicIP = req.Headers["x-PIP"];
+            string region = req.Headers["x-Region"];
+            int regionId = 1;
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
             Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
 
             // if server is authenticated
-            if (receivedAuthKey != null && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
+            if (receivedAuthKey != null && region != null && int.TryParse(region, out regionId) && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
             {
                 Logger.WriteLogMessage($"Server accepted: {address}:{gamePort}");
 
@@ -58,7 +74,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 {
                     var _gamePort = Convert.ToUInt16(gamePort);
                     var _endpointPort = Convert.ToUInt16(endpointPort);
-                    await Program.instance.AddServer(address, _gamePort, _endpointPort, publicIP);
+                    await Program.instance.AddServer(address, _gamePort, _endpointPort, publicIP, regionId);
                 }
                 catch
                 {
@@ -82,18 +98,64 @@ namespace LightReflectiveMirror.LoadBalancing
             // Dont allow unauthorizated access waste computing resources.
             string auth = context.Request.Headers["Authorization"];
 
-            if(!string.IsNullOrEmpty(auth) && auth == Program.conf.AuthKey)
+            if (!string.IsNullOrEmpty(auth) && auth == Program.conf.AuthKey)
             {
                 var relays = Program.instance.availableRelayServers.ToList();
-                List<Room> masterList = new();
+                ClearAllServersLists();
+                List<Room> requestedRooms;
 
-                for(int i = 0; i < relays.Count; i++)
+                for (int i = 0; i < relays.Count; i++)
                 {
-                    masterList.AddRange(await Program.instance.RequestServerListFromNode(relays[i].Key.Address, relays[i].Key.EndpointPort));
+                    requestedRooms = await Program.instance.RequestServerListFromNode(relays[i].Key.address, relays[i].Key.endpointPort);
+                    allServers.AddRange(requestedRooms);
+
+                    switch (relays[i].Key.serverRegion)
+                    {
+                        case (LRMRegions.NorthAmerica):
+                            northAmericaServers.AddRange(requestedRooms);
+                            break;
+                        case (LRMRegions.SouthAmerica):
+                            southAmericaServers.AddRange(requestedRooms);
+                            break;
+                        case (LRMRegions.Europe):
+                            europeServers.AddRange(requestedRooms);
+                            break;
+                        case (LRMRegions.Africa):
+                            africaServers.AddRange(requestedRooms);
+                            break;
+                        case (LRMRegions.Asia):
+                            asiaServers.AddRange(requestedRooms);
+                            break;
+                        case (LRMRegions.Oceania):
+                            oceaniaServers.AddRange(requestedRooms);
+                            break;
+                    }
                 }
 
-                cachedServerList = JsonConvert.SerializeObject(masterList);
+                CacheAllServers();
             }
+        }
+
+        void CacheAllServers()
+        {
+            allCachedServers = JsonConvert.SerializeObject(allServers);
+            NorthAmericaCachedServers = JsonConvert.SerializeObject(northAmericaServers);
+            SouthAmericaCachedServers = JsonConvert.SerializeObject(southAmericaServers);
+            EuropeCachedServers = JsonConvert.SerializeObject(europeServers);
+            AsiaCachedServers = JsonConvert.SerializeObject(asiaServers);
+            AfricaCachedServers = JsonConvert.SerializeObject(africaServers);
+            OceaniaCachedServers = JsonConvert.SerializeObject(oceaniaServers);
+        }
+
+        void ClearAllServersLists()
+        {
+            northAmericaServers.Clear();
+            southAmericaServers.Clear();
+            europeServers.Clear();
+            asiaServers.Clear();
+            africaServers.Clear();
+            oceaniaServers.Clear();
+            allServers.Clear();
         }
 
         /// <summary>
@@ -119,7 +181,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             for (int i = 0; i < servers.Count; i++)
             {
-                if (servers[i].Value.ConnectedClients < lowest.Value.ConnectedClients)
+                if (servers[i].Value.connectedClients < lowest.Value.connectedClients)
                 {
                     lowest = servers[i];
                 }
@@ -127,7 +189,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             // respond with the server ip
             // if the string is still dummy then theres no servers
-            if (lowest.Key.Address != "Dummy")
+            if (lowest.Key.address != "Dummy")
             {
                 await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
             }
@@ -145,7 +207,40 @@ namespace LightReflectiveMirror.LoadBalancing
         [RestRoute("Get", "/api/masterlist/")]
         public async Task GetMasterServerList(IHttpContext context)
         {
-            await context.Response.SendResponseAsync(cachedServerList);
+            string region = context.Request.Headers["x-Region"];
+
+            if(int.TryParse(region, out int regionID))
+            {
+                switch ((LRMRegions)regionID)
+                {
+                    case LRMRegions.Any:
+                        await context.Response.SendResponseAsync(allCachedServers);
+                        break;
+                    case LRMRegions.NorthAmerica:
+                        await context.Response.SendResponseAsync(NorthAmericaCachedServers);
+                        break;
+                    case LRMRegions.SouthAmerica:
+                        await context.Response.SendResponseAsync(SouthAmericaCachedServers);
+                        break;
+                    case LRMRegions.Europe:
+                        await context.Response.SendResponseAsync(EuropeCachedServers);
+                        break;
+                    case LRMRegions.Africa:
+                        await context.Response.SendResponseAsync(AfricaCachedServers);
+                        break;
+                    case LRMRegions.Asia:
+                        await context.Response.SendResponseAsync(AsiaCachedServers);
+                        break;
+                    case LRMRegions.Oceania:
+                        await context.Response.SendResponseAsync(OceaniaCachedServers);
+                        break;
+                }
+
+                return;
+            }
+
+            // They didnt submit a region header, just give them all servers as they probably are viewing in browser.
+            await context.Response.SendResponseAsync(allCachedServers);
         }
 
         /// <summary>
@@ -218,7 +313,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             bool hasLocal = false;
 
-            for(int i = 0; i < bindableIPv4Addresses.Count; i++)
+            for (int i = 0; i < bindableIPv4Addresses.Count; i++)
             {
                 if (bindableIPv4Addresses[i] == "127.0.0.1")
                     hasLocal = true;

@@ -33,8 +33,8 @@ namespace LightReflectiveMirror
     [Serializable]
     public struct RelayAddress
     {
-        public ushort Port;
-        public ushort EndpointPort;
-        public string Address;
+        public ushort port;
+        public ushort endpointPort;
+        public string address;
     }
 }

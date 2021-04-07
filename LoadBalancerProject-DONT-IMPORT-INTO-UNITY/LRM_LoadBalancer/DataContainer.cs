@@ -8,10 +8,10 @@ namespace LightReflectiveMirror.LoadBalancing
     [Serializable]
     public struct RelayServerInfo
     {
-        public int ConnectedClients;
-        public int RoomCount;
-        public int PublicRoomCount;
-        public TimeSpan Uptime;
+        public int connectedClients;
+        public int roomCount;
+        public int publicRoomCount;
+        public TimeSpan uptime;
 
         [JsonIgnore]
         public List<Room> serversConnectedToRelay;
@@ -20,21 +20,22 @@ namespace LightReflectiveMirror.LoadBalancing
     [Serializable]
     internal struct LoadBalancerStats
     {
-        public int NodeCount;
-        public TimeSpan Uptime;
+        public int nodeCount;
+        public TimeSpan uptime;
         public long CCU;
-        public long TotalServerCount;
+        public long totalServerCount;
     }
 
     // container for relay address info
     [JsonObject(MemberSerialization.OptOut)]
     public struct RelayAddress
     {
-        public ushort Port;
-        public ushort EndpointPort;
-        public string Address;
+        public ushort port;
+        public ushort endpointPort;
+        public string address;
+        public LRMRegions serverRegion;
         [JsonIgnore]
-        public string EndpointAddress;
+        public string endpointAddress;
     }
 
     [Serializable]
@@ -50,4 +51,6 @@ namespace LightReflectiveMirror.LoadBalancing
 
         public RelayAddress relayInfo;
     }
+
+    public enum LRMRegions { Any, NorthAmerica, SouthAmerica, Europe, Asia, Africa, Oceania }
 }

@@ -35,5 +35,6 @@ namespace LightReflectiveMirror
         public string LoadBalancerAuthKey = "AuthKey";
         public string LoadBalancerAddress = "127.0.0.1";
         public ushort LoadBalancerPort = 7070;
+        public LRMRegions LoadBalancerRegion = LRMRegions.NorthAmerica;
     }
 }

@@ -34,4 +34,6 @@ namespace LightReflectiveMirror
 
         private readonly string CONFIG_PATH = System.Environment.GetEnvironmentVariable("LRM_CONFIG_PATH") ?? "config.json";
     }
+
+    public enum LRMRegions { Any, NorthAmerica, SouthAmerica, Europe, Asia, Africa, Oceania }
 }

@@ -152,22 +152,23 @@ namespace LightReflectiveMirror
                     }
                 }
             }
-            else if(lrm.NATPunchtroughPort < 0)
+            else if (lrm.NATPunchtroughPort < 0)
             {
                 // NAT Punchthrough configuration.
                 EditorGUILayout.HelpBox("Do you wish to use NAT Punchthrough? This can reduce load by up to 80% on your LRM nodes, but exposes players IP's to other players.", MessageType.None);
 
-                if(GUILayout.Button("Use NAT Punchthrough"))
+                if (GUILayout.Button("Use NAT Punchthrough"))
                 {
                     lrm.NATPunchtroughPort = 1;
                     lrm.useNATPunch = true;
                     lrm.gameObject.AddComponent<LRMDirectConnectModule>();
                 }
 
-                if(GUILayout.Button("Do NOT use NAT Punchthrough"))
+                if (GUILayout.Button("Do NOT use NAT Punchthrough"))
                     lrm.NATPunchtroughPort = 1;
 
-            }else if(directModule != null && directModule.directConnectTransport == null)
+            }
+            else if (directModule != null && directModule.directConnectTransport == null)
             {
                 // NAT Punchthrough setup.
                 EditorGUILayout.HelpBox("To use direct connecting, we need a transport to communicate with the other clients. Please select a transport to use.", MessageType.None);
@@ -217,7 +218,7 @@ namespace LightReflectiveMirror
                         break;
                     case 1:
                         // NAT punch tab.
-                        if(directModule == null)
+                        if (directModule == null)
                         {
                             EditorGUILayout.HelpBox("If you wish to use NAT punch, you will need to add a \"Direct Connect Module\" to this gameobject.", MessageType.Info);
                         }
@@ -230,8 +231,14 @@ namespace LightReflectiveMirror
                     case 2:
                         // Load balancer tab
                         lrm.useLoadBalancer = EditorGUILayout.Toggle("Use Load Balancer", lrm.useLoadBalancer);
+                        if (!lrm.useLoadBalancer)
+                            GUI.enabled = false;
                         lrm.loadBalancerAddress = EditorGUILayout.TextField("Load Balancer Address", lrm.loadBalancerAddress);
                         lrm.loadBalancerPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("Load Balancer Port", lrm.loadBalancerPort), ushort.MinValue, ushort.MaxValue);
+                        lrm.region = (LRMRegions)EditorGUILayout.EnumPopup("Node Region", lrm.region);
+                        if (!lrm.useLoadBalancer)
+                            GUI.enabled = true;
+
                         break;
                     case 3:
                         // Other tab...

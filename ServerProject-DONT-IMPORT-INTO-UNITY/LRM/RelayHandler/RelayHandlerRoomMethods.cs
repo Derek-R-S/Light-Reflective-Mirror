@@ -132,10 +132,10 @@ namespace LightReflectiveMirror
                 serverData = serverData,
                 clients = new List<int>(),
 
-                // hard coded for now REMEMBER TO UN-HARDCODE RETARD
+                // hard coded for now REMEMBER TO UN-HARDCODE
                 // this is needed for load balancer to know which server this room 
                 // belongs to
-                relayInfo = new RelayAddress { Address = Program.publicIP, Port = 7777, EndpointPort = Program.conf.EndpointPort },
+                relayInfo = new RelayAddress { address = Program.publicIP, port = 7777, endpointPort = Program.conf.EndpointPort },
 
                 serverId = GetRandomServerID(),
                 hostIP = hostIP,

@@ -42,6 +42,7 @@ namespace LightReflectiveMirror
 
         private LRMDirectConnectModule _directConnectModule;
 
+        public LRMRegions region = LRMRegions.NorthAmerica;
         private byte[] _clientSendBuffer;
         private bool _connectedToRelay = false;
         private bool _isClient = false;
@@ -61,4 +62,6 @@ namespace LightReflectiveMirror
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
         private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
     }
+
+    public enum LRMRegions { Any, NorthAmerica, SouthAmerica, Europe, Asia, Africa, Oceania }
 }

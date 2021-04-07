@@ -71,9 +71,9 @@ namespace LightReflectiveMirror.LoadBalancing
         /// <param name="endpointPort"></param>
         /// <param name="publicIP"></param>
         /// <returns></returns>
-        public async Task AddServer(string serverIP, ushort port, ushort endpointPort, string publicIP)
+        public async Task AddServer(string serverIP, ushort port, ushort endpointPort, string publicIP, int regionId)
         {
-            var relayAddr = new RelayAddress { Port = port, EndpointPort = endpointPort, Address = publicIP, EndpointAddress = serverIP };
+            var relayAddr = new RelayAddress { port = port, endpointPort = endpointPort, address = publicIP, endpointAddress = serverIP.Trim(), serverRegion = (LRMRegions)regionId };
 
             if (availableRelayServers.ContainsKey(relayAddr))
             {
@@ -187,13 +187,14 @@ namespace LightReflectiveMirror.LoadBalancing
 
                 for (int i = 0; i < keys.Count; i++)
                 {
-                    if(!await HealthCheckNode(keys[i].EndpointAddress, keys[i].EndpointPort))
+                    if(!await HealthCheckNode(keys[i].endpointAddress, keys[i].endpointPort))
                     {
-                        Logger.ForceLogMessage($"Server {keys[i].Address}:{keys[i].Port} failed a health check, removing from load balancer.", ConsoleColor.Red);
+                        Logger.ForceLogMessage($"Server {keys[i].address}:{keys[i].port} failed a health check, removing from load balancer.", ConsoleColor.Red);
                         availableRelayServers.Remove(keys[i]);
                     }
                 }
 
+                GC.Collect();
                 await Task.Delay(_pingDelay);
             }
         }
@@ -229,5 +230,4 @@ namespace LightReflectiveMirror.LoadBalancing
             Logger.ForceLogMessage(load, ConsoleColor.Cyan);
         }
     }
-
 }
