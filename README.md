@@ -29,11 +29,7 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 * Relay supports connecting users without them needing to port forward!
 * NAT Punchtrough
 * Direct Connecting
-
-## Plans
-
-For the future I plan on adding features such as:
-* Multi Relay server setup for load balancing (It will split players up between multiple relay servers to make sure one single relay server isnt doing all the heavy lifting)
+* Load Balancing with multi-relay setup
 
 ## How does it work?
 
