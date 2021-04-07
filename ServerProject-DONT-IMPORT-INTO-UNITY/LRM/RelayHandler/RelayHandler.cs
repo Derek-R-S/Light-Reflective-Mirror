@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Linq;
 
 namespace LightReflectiveMirror
 {
@@ -78,15 +79,30 @@ namespace LightReflectiveMirror
         /// Generates a random server ID.
         /// </summary>
         /// <returns></returns>
-        int GetRandomServerID()
+        string GetRandomServerID()
         {
-            Random rand = new Random();
-            int temp = rand.Next(int.MinValue, int.MaxValue);
+            if (!Program.conf.UseLoadBalancer)
+            {
+                const int LENGTH = 5;
+                const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                var randomID = "";
 
-            while (DoesServerIdExist(temp))
-                temp = rand.Next(int.MinValue, int.MaxValue);
+                do
+                {
+                    var random = new System.Random();
+                    randomID = new string(Enumerable.Repeat(chars, LENGTH)
+                                                            .Select(s => s[random.Next(s.Length)]).ToArray());
+                }
+                while (DoesServerIdExist(randomID));
 
-            return temp;
+                return randomID;
+            }
+            else
+            {
+                // ping load balancer here
+
+                return "";
+            }
         }
 
         /// <summary>
@@ -94,7 +110,7 @@ namespace LightReflectiveMirror
         /// </summary>
         /// <param name="id">The ID to check for</param>
         /// <returns></returns>
-        bool DoesServerIdExist(int id)
+        bool DoesServerIdExist(string id)
         {
             for (int i = 0; i < rooms.Count; i++)
                 if (rooms[i].serverId == id)

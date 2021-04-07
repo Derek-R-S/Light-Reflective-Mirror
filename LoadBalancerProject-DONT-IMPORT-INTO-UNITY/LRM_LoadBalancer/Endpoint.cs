@@ -84,7 +84,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             if (servers.Count == 0)
             {
-                await context.Response.SendResponseAsync(HttpStatusCode.ServiceUnavailable);
+                await context.Response.SendResponseAsync(HttpStatusCode.NoContent);
                 return;
             }
 
