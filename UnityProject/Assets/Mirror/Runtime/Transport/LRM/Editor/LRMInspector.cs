@@ -30,6 +30,12 @@ namespace LightReflectiveMirror
             var lrm = (LightReflectiveMirrorTransport)target;
             directModule = lrm.GetComponent<LRMDirectConnectModule>();
 
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(Resources.Load<Texture>("LRM"), GUILayout.Height(50), GUILayout.Width(100));
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
             if (string.IsNullOrEmpty(lrm.loadBalancerAddress))
             {
                 // First setup screen, ask if they are using LLB or just a single LRM node.
@@ -232,7 +238,7 @@ namespace LightReflectiveMirror
 
                         GUI.enabled = false;
                         EditorGUILayout.TextField("Server Status", lrm.serverStatus);
-                        EditorGUILayout.TextField("Server ID", lrm.serverId == -1 ? "Not Hosting" : lrm.serverId.ToString());
+                        EditorGUILayout.TextField("Server ID", string.IsNullOrEmpty(lrm.serverId) ? "Not Hosting." : lrm.serverId);
                         GUI.enabled = true;
 
                         EditorGUILayout.Space();

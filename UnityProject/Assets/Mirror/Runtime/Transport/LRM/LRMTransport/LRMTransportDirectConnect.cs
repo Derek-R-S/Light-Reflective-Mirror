@@ -52,7 +52,7 @@ namespace LightReflectiveMirror
                 int pos = 0;
                 _directConnected = false;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
-                _clientSendBuffer.WriteInt(ref pos, _cachedHostID);
+                _clientSendBuffer.WriteString(ref pos, _cachedHostID);
                 _clientSendBuffer.WriteBool(ref pos, false); // Direct failed, use relay
 
                 _isClient = true;

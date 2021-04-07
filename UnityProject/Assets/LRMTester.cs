@@ -43,7 +43,7 @@ public class LRMTester : MonoBehaviour
             var serverEntry = Instantiate(serverListEntry, serverListParent);
 
             serverEntry.transform.GetChild(0).GetComponent<Text>().text = $"{_LRM.relayServerList[i].serverName + " - " + JsonConvert.SerializeObject(_LRM.relayServerList[i].relayInfo)}";
-            int serverID = _LRM.relayServerList[i].serverId;
+            string serverID = _LRM.relayServerList[i].serverId;
             serverEntry.GetComponent<Button>().onClick.AddListener(() => { NetworkManager.singleton.networkAddress = serverID.ToString(); NetworkManager.singleton.StartClient(); });
         }
     }

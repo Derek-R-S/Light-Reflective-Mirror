@@ -68,6 +68,8 @@ namespace LightReflectiveMirror
             if (_isClient || _isServer)
                 throw new Exception("Cannot connect while hosting/already connected!");
 
+            _cachedHostID = address;
+
             var room = GetServerForID(address);
 
             if (!useLoadBalancer || room.relayInfo.Address == serverIP)

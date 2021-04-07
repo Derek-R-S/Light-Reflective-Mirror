@@ -50,6 +50,7 @@ namespace LightReflectiveMirror
         private bool _isAuthenticated = false;
         private int _currentMemberId;
         private bool _callbacksInitialized = false;
+        private string _cachedHostID;
         private UdpClient _NATPuncher;
         private IPEndPoint _NATIP;
         private IPEndPoint _relayPuncherIP;
