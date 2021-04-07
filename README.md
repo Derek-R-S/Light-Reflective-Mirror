@@ -1,6 +1,3 @@
-
-
-
 ![Logo](LRM.png)
 
 
