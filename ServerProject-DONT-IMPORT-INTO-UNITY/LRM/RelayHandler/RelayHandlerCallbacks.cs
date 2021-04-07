@@ -62,7 +62,7 @@ namespace LightReflectiveMirror
                         LeaveRoom(clientId);
                         break;
                     case OpCodes.JoinServer:
-                        JoinRoom(clientId, data.ReadInt(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos));
+                        JoinRoom(clientId, data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos));
                         break;
                     case OpCodes.KickPlayer:
                         LeaveRoom(data.ReadInt(ref pos), clientId);

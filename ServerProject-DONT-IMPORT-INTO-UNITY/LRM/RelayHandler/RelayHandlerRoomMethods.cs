@@ -33,7 +33,7 @@ namespace LightReflectiveMirror
         /// <param name="serverId">The server ID of the room</param>
         /// <param name="canDirectConnect">If the client is capable of a direct connection</param>
         /// <param name="localIP">The local IP of the client joining</param>
-        void JoinRoom(int clientId, int serverId, bool canDirectConnect, string localIP)
+        void JoinRoom(int clientId, string serverId, bool canDirectConnect, string localIP)
         {
             LeaveRoom(clientId);
 
@@ -151,7 +151,7 @@ namespace LightReflectiveMirror
             byte[] sendBuffer = _sendBuffers.Rent(5);
 
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.RoomCreated);
-            sendBuffer.WriteInt(ref pos, clientId);
+            sendBuffer.WriteString(ref pos, room.serverId);
 
             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
             _sendBuffers.Return(sendBuffer);
