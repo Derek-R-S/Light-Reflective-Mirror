@@ -4,7 +4,7 @@ namespace LightReflectiveMirror.LoadBalancing
 {
     public partial class Endpoint
     {
-        void CacheAllServers()
+        static void CacheAllServers()
         {
             allCachedServers = JsonConvert.SerializeObject(_allServers);
             NorthAmericaCachedServers = JsonConvert.SerializeObject(_northAmericaServers);
@@ -15,7 +15,7 @@ namespace LightReflectiveMirror.LoadBalancing
             OceaniaCachedServers = JsonConvert.SerializeObject(_oceaniaServers);
         }
 
-        void ClearAllServersLists()
+        static void ClearAllServersLists()
         {
             _northAmericaServers.Clear();
             _southAmericaServers.Clear();

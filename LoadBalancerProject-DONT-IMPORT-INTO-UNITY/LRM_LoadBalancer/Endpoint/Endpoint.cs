@@ -85,6 +85,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
                     switch (relays[i].Key.serverRegion)
                     {
+                        default:
                         case (LRMRegions.NorthAmerica):
                             _northAmericaServers.AddRange(requestedRooms);
                             break;
