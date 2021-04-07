@@ -104,7 +104,7 @@ namespace LightReflectiveMirror
                                 _pendingNATPunches.Remove(clientID);
                         };
 
-                        transport.ServerStart();
+                        transport.ServerStart(conf.TransportPort);
 
                         WriteLogMessage("OK", ConsoleColor.Green);
 
