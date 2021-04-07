@@ -1,12 +1,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine AS builder
 WORKDIR /lrm
 COPY . .
-RUN [\
-    "dotnet", "publish", \
-    "--output", "/build/", \
-    "--configuration", "Release",\
-    "--no-self-contained", \
-    "." ]
+ARG BUILD_MODE="Release"
+RUN dotnet publish \
+    --output /build/ \
+    --configuration $BUILD_MODE \
+    --no-self-contained .
 
 FROM mcr.microsoft.com/dotnet/runtime:5.0-alpine
 WORKDIR /lrm
