@@ -21,10 +21,6 @@ namespace LightReflectiveMirror
         public bool IsAuthenticated() => _isAuthenticated;
         private void Awake()
         {
-#if !NET_4_6
-            throw new Exception("LRM | Please switch to .NET 4.x for LRM to function properly!");
-#endif
-
             if (clientToServerTransport is LightReflectiveMirrorTransport)
                 throw new Exception("Haha real funny... Use a different transport.");
 
@@ -63,6 +59,7 @@ namespace LightReflectiveMirror
             _connectedToRelay = false;
             _isAuthenticated = false;
             diconnectedFromRelay?.Invoke();
+            serverStatus = "Disconnected from relay.";
         }
 
         public void ConnectToRelay()
@@ -102,8 +99,10 @@ namespace LightReflectiveMirror
                 throw new Exception("LRM | Client to Server Transport cannot be LRM.");
 
             SetTransportPort(port);
+            
 
             this.serverIP = serverIP;
+            serverStatus = "Connecting to relay...";
             _clientSendBuffer = new byte[clientToServerTransport.GetMaxPacketSize()];
             clientToServerTransport.ClientConnect(serverIP);
         }
@@ -152,9 +151,11 @@ namespace LightReflectiveMirror
                 switch (opcode)
                 {
                     case OpCodes.Authenticated:
+                        serverStatus = "Authenticated! Good to go!";
                         _isAuthenticated = true;
                         break;
                     case OpCodes.AuthenticationRequest:
+                        serverStatus = "Sent authentication to relay...";
                         SendAuthKey();
                         break;
                     case OpCodes.GetData:
@@ -188,7 +189,7 @@ namespace LightReflectiveMirror
                         }
                         break;
                     case OpCodes.RoomCreated:
-                        serverId = data.ReadInt(ref pos);
+                        serverId = data.ReadString(ref pos);
                         break;
                     case OpCodes.ServerJoined:
                         int clientId = data.ReadInt(ref pos);
@@ -261,7 +262,7 @@ namespace LightReflectiveMirror
                             if (!IPAddress.TryParse(serverIP, out serverAddr))
                                 serverAddr = Dns.GetHostEntry(serverIP).AddressList[0];
 
-                            _relayPuncherIP = new IPEndPoint(IPAddress.Parse(serverIP), NATPunchtroughPort);
+                            _relayPuncherIP = new IPEndPoint(serverAddr, NATPunchtroughPort);
 
                             // Send 3 to lower chance of it being dropped or corrupted when received on server.
                             _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
@@ -331,7 +332,7 @@ namespace LightReflectiveMirror
             }
         }
 
-        Room GetServerForID(int serverID)
+        Room GetServerForID(string serverID)
         {
             for(int i = 0; i < relayServerList.Count; i++)
             {
@@ -339,6 +340,7 @@ namespace LightReflectiveMirror
                     return relayServerList[i];
             }
 
+            OnClientDisconnected?.Invoke();
             throw new Exception("LRM | An attempt was made to connect to a server which does not exist!");
         }
 
@@ -377,7 +379,7 @@ namespace LightReflectiveMirror
     {
         public string serverName;
         public int maxPlayers;
-        public int serverId;
+        public string serverId;
         public string serverData;
         public int hostId;
         public List<int> clients;
