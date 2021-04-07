@@ -18,6 +18,7 @@ namespace LightReflectiveMirror.LoadBalancing
     [RestResource]
     public partial class Endpoint
     {
+
         /// <summary>
         /// Sent from an LRM server node
         /// adds it to the list if authenticated.
@@ -74,7 +75,7 @@ namespace LightReflectiveMirror.LoadBalancing
             if (!string.IsNullOrEmpty(auth) && auth == Program.conf.AuthKey)
             {
                 var relays = Program.instance.availableRelayServers.ToList();
-                PerformActionToAllServers(LRMServerOpCode.Clear);
+                ClearAllServersLists();
                 List<Room> requestedRooms;
 
                 for (int i = 0; i < relays.Count; i++)
@@ -105,7 +106,7 @@ namespace LightReflectiveMirror.LoadBalancing
                     }
                 }
 
-                PerformActionToAllServers(LRMServerOpCode.Cache);
+                CacheAllServers();
             }
         }
 

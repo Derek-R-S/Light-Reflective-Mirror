@@ -24,22 +24,6 @@ namespace LightReflectiveMirror.LoadBalancing
         private static List<Room> _oceaniaServers = new();
         private static List<Room> _allServers = new();
 
-        /// <summary>
-        /// This holds all the servers. It's a bit confusing,
-        /// but basically if we have a container for them then we
-        /// can shorten up methods that involve operations with all of them.
-        /// </summary>
-        private static List<Tuple<List<Room>, string>> _allServersToPerformActionOn = new()
-        {
-            new Tuple<List<Room>, string>(_northAmericaServers, NorthAmericaCachedServers),
-            new Tuple<List<Room>, string>(_southAmericaServers, SouthAmericaCachedServers),
-            new Tuple<List<Room>, string>(_europeServers, EuropeCachedServers),
-            new Tuple<List<Room>, string>(_africaServers, AfricaCachedServers),
-            new Tuple<List<Room>, string>(_asiaServers, AsiaCachedServers),
-            new Tuple<List<Room>, string>(_oceaniaServers, OceaniaCachedServers),
-            new Tuple<List<Room>, string>(_allServers, allCachedServers),
-        };
-
         private LoadBalancerStats _stats
         {
             get => new()

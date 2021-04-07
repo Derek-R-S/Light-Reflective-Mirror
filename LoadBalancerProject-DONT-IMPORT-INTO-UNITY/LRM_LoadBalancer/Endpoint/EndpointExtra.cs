@@ -1,45 +1,29 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LightReflectiveMirror.LoadBalancing
 {
     public partial class Endpoint
     {
-        /// <summary>
-        /// We can write all server operations in here, 
-        /// to make it more clean.
-        /// </summary>
-        /// <param name="operation"></param>
-        /// <param name="onComplete"></param>
-        public static void PerformActionToAllServers(LRMServerOpCode operation, Action onComplete = null)
+        void CacheAllServers()
         {
-            switch (operation)
-            {
-                case LRMServerOpCode.Clear:
-                    for (int i = 0; i < _allServersToPerformActionOn.Count; i++)
-                        _allServersToPerformActionOn[i].Item1.Clear();
-                    break;
-                 
-                // Removes the old cached string and reserialzes the new one
-                case LRMServerOpCode.Cache:
-                    for (int i = 0; i < _allServersToPerformActionOn.Count; i++)
-                    {
-                        var tuple = _allServersToPerformActionOn[i];
-                        var serializedData = JsonConvert.SerializeObject(_allServersToPerformActionOn[i].Item1);
+            allCachedServers = JsonConvert.SerializeObject(_allServers);
+            NorthAmericaCachedServers = JsonConvert.SerializeObject(_northAmericaServers);
+            SouthAmericaCachedServers = JsonConvert.SerializeObject(_southAmericaServers);
+            EuropeCachedServers = JsonConvert.SerializeObject(_europeServers);
+            AsiaCachedServers = JsonConvert.SerializeObject(_asiaServers);
+            AfricaCachedServers = JsonConvert.SerializeObject(_africaServers);
+            OceaniaCachedServers = JsonConvert.SerializeObject(_oceaniaServers);
+        }
 
-                        _allServersToPerformActionOn.Remove(tuple);
-                        _allServersToPerformActionOn.Add(new Tuple<List<Room>, string>(tuple.Item1, serializedData));
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-
+        void ClearAllServersLists()
+        {
+            _northAmericaServers.Clear();
+            _southAmericaServers.Clear();
+            _europeServers.Clear();
+            _asiaServers.Clear();
+            _africaServers.Clear();
+            _oceaniaServers.Clear();
+            _allServers.Clear();
         }
     }
 }
