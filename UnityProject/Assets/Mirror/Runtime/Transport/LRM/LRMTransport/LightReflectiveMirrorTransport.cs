@@ -262,7 +262,7 @@ namespace LightReflectiveMirror
                             if (!IPAddress.TryParse(serverIP, out serverAddr))
                                 serverAddr = Dns.GetHostEntry(serverIP).AddressList[0];
 
-                            _relayPuncherIP = new IPEndPoint(IPAddress.Parse(serverIP), NATPunchtroughPort);
+                            _relayPuncherIP = new IPEndPoint(serverAddr, NATPunchtroughPort);
 
                             // Send 3 to lower chance of it being dropped or corrupted when received on server.
                             _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
