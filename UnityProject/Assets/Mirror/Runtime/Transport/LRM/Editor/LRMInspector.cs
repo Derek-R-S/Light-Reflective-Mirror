@@ -191,9 +191,19 @@ namespace LightReflectiveMirror
             {
                 // They have completed the "setup guide" Show them the main UI
 
+#if !NET_4_6
+                EditorGUILayout.BeginVertical("Box");
+                EditorGUILayout.HelpBox("For LRM to function properly, it needs the API Compatibility to be at 4.x", MessageType.Error);
+                if (GUILayout.Button("Change to 4.x"))
+                    PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6);
+                EditorGUILayout.EndVertical();
+                EditorGUILayout.Space();
+#endif
+
                 currentTab = GUILayout.Toolbar(currentTab, tabs);
                 EditorGUILayout.Space();
 
+                EditorGUILayout.BeginVertical("Box");
                 switch (currentTab)
                 {
                     case 0:
@@ -261,6 +271,7 @@ namespace LightReflectiveMirror
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("serverListUpdated"));
                         break;
                 }
+                EditorGUILayout.EndVertical();
             }
         }
     }
