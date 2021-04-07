@@ -84,7 +84,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             if (servers.Count == 0)
             {
-                await context.Response.SendResponseAsync(HttpStatusCode.NoContent);
+                await context.Response.SendResponseAsync(HttpStatusCode.RangeNotSatisfiable);
                 return;
             }
 
@@ -124,26 +124,24 @@ namespace LightReflectiveMirror.LoadBalancing
         [RestRoute("Get", "/api/masterlist/")]
         public async Task GetMasterServerList(IHttpContext context)
         {
-            var relays = Program.instance.availableRelayServers.ToList();
-            List<Room> masterList = new();
-
-            foreach (var relay in relays)
-            {
-                var serversOnRelay = await Program.instance.GetServerListFromIndividualRelay(relay.Key.Address, relay.Key.EndpointPort);
-
-                if(serversOnRelay != null)
+                var relays = Program.instance.availableRelayServers.ToList();
+                List<Room> masterList = new();
+                foreach (var relay in relays)
                 {
-                    masterList.AddRange(serversOnRelay);
-                }
-                else { continue; }
-            }
+                    var serversOnRelay = await Program.instance.GetServerListFromIndividualRelay(relay.Key.Address, relay.Key.EndpointPort);
 
-            // we have servers, send em!
-            if (masterList.Any())
-                await context.Response.SendResponseAsync(JsonConvert.SerializeObject(masterList));
-            // no servers or maybe no relays, fuck you
-            else
-                await context.Response.SendResponseAsync(HttpStatusCode.NoContent);
+                    if (serversOnRelay != null)
+                    {
+                        masterList.AddRange(serversOnRelay);
+                    }
+                    else { continue; }
+                }
+                // we have servers, send em!
+                if (masterList.Any())
+                    await context.Response.SendResponseAsync(JsonConvert.SerializeObject(masterList));
+                // no servers or maybe no relays, fuck you
+                else
+                    await context.Response.SendResponseAsync(HttpStatusCode.RangeNotSatisfiable);
         }
 
         /// <summary>
@@ -184,11 +182,13 @@ namespace LightReflectiveMirror.LoadBalancing
                     services.Configure<LoggerFilterOptions>(options => options.MinLevel = LogLevel.None);
                 }, (server) =>
                 {
-                    foreach(string ip in GetLocalIps())
+                    foreach (string ip in GetLocalIps())
+                    {
                         server.Prefixes.Add($"http://{ip}:{port}/");
+                    }
                 }).Build();
 
-                server.Router.Options.SendExceptionMessages = false;
+                server.Router.Options.SendExceptionMessages = true;
                 server.Start();
 
                 return true;
@@ -211,6 +211,17 @@ namespace LightReflectiveMirror.LoadBalancing
                     bindableIPv4Addresses.Add(ip.ToString());
                 }
             }
+
+            bool hasLocal = false;
+
+            for(int i = 0; i < bindableIPv4Addresses.Count; i++)
+            {
+                if (bindableIPv4Addresses[i] == "127.0.0.1")
+                    hasLocal = true;
+            }
+
+            if (!hasLocal)
+                bindableIPv4Addresses.Add("127.0.0.1");
 
             return bindableIPv4Addresses;
         }
