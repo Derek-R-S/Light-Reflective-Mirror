@@ -162,7 +162,7 @@ namespace Mirror
         }
         public override void ServerStop() => server.Stop();
         // messages should always be processed in early update
-        public void LateUpdate()
+        public void Update()
         {
             // note: we need to check enabled in case we set it to false
             // when LateUpdate already started.
