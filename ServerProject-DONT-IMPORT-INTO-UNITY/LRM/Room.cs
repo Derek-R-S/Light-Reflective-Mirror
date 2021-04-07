@@ -8,7 +8,7 @@ namespace LightReflectiveMirror
     [JsonObject(MemberSerialization.OptOut)]
     public class Room
     {
-        public int serverId;
+        public string serverId;
         public int hostId;
         public string serverName;
         public string serverData;
