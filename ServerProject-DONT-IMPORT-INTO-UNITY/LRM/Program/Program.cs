@@ -38,9 +38,13 @@ namespace LightReflectiveMirror
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
 
                 // Docker variables.
-                ushort.TryParse(Environment.GetEnvironmentVariable("LRM_ENDPOINT_PORT"), out conf.EndpointPort);
+                try
+                {
+                    conf.EndpointPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_ENDPOINT_PORT"));
 
-                ushort.TryParse(Environment.GetEnvironmentVariable("LRM_TRANSPORT_PORT"), out conf.TransportPort);
+                    conf.TransportPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_TRANSPORT_PORT"));
+                }
+                catch { }
 
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
