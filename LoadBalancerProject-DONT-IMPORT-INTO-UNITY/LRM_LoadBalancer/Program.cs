@@ -12,8 +12,7 @@ namespace LightReflectiveMirror.LoadBalancing
     partial class Program
     {
         /// <summary>
-        /// Keeps track of all available relays.
-        /// Key is server address, value is CCU.
+        /// Keeps track of all the LRM nodes registered to the Load Balancer.
         /// </summary>
         public Dictionary<RelayAddress, RelayServerInfo> availableRelayServers = new();
 
@@ -64,6 +63,14 @@ namespace LightReflectiveMirror.LoadBalancing
         }
 
 
+        /// <summary>
+        /// Called when a new server requested that we add them to our load balancer.
+        /// </summary>
+        /// <param name="serverIP"></param>
+        /// <param name="port"></param>
+        /// <param name="endpointPort"></param>
+        /// <param name="publicIP"></param>
+        /// <returns></returns>
         public async Task AddServer(string serverIP, ushort port, ushort endpointPort, string publicIP)
         {
             var relayAddr = new RelayAddress { Port = port, EndpointPort = endpointPort, Address = publicIP, EndpointAddress = serverIP };
@@ -74,13 +81,22 @@ namespace LightReflectiveMirror.LoadBalancing
                 return;
             }
 
-            var stats = await ManualPingServer(serverIP, endpointPort);
+            var stats = await RequestStatsFromNode(serverIP, endpointPort);
 
             if (stats.HasValue)
+            {
+                Logger.ForceLogMessage($"LRM Node Registered! {serverIP}:{port}", ConsoleColor.Green);
                 availableRelayServers.Add(relayAddr, stats.Value);
+            }
         }
 
-        public async Task<RelayServerInfo?> ManualPingServer(string serverIP, ushort port)
+        /// <summary>
+        /// Called when we want to get the server info from a server.
+        /// </summary>
+        /// <param name="serverIP"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public async Task<RelayServerInfo?> RequestStatsFromNode(string serverIP, ushort port)
         {
             using (WebClient wc = new WebClient())
             {
@@ -103,7 +119,38 @@ namespace LightReflectiveMirror.LoadBalancing
             }
         }
 
-        public async Task<List<Room>> GetServerListFromIndividualRelay(string serverIP, ushort port)
+        /// <summary>
+        /// Called when we want to check if a server is alive.
+        /// </summary>
+        /// <param name="serverIP"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public async Task<bool> HealthCheckNode(string serverIP, ushort port)
+        {
+            using (WebClient wc = new WebClient())
+            {
+                try
+                {
+                    await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}{API_PATH}");
+
+                    // If it got to here, then the server is healthy!
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    // Server failed to respond
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Called when we want to get the list of rooms in a specific LRM node.
+        /// </summary>
+        /// <param name="serverIP"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public async Task<List<Room>> RequestServerListFromNode(string serverIP, ushort port)
         {
             using (WebClient wc = new WebClient())
             {
@@ -111,6 +158,8 @@ namespace LightReflectiveMirror.LoadBalancing
                 {
                     string receivedStats = await wc.DownloadStringTaskAsync($"http://{serverIP}:{port}/api/servers");
                     var stats = JsonConvert.DeserializeObject<List<Room>>(receivedStats);
+
+                    // If they have no servers, it will return null as json for some reason.
                     if (stats == null)
                         return new List<Room>();
                     else
@@ -124,6 +173,9 @@ namespace LightReflectiveMirror.LoadBalancing
             }
         }
 
+        /// <summary>
+        /// A thread constantly running and making sure LRM nodes are still healthy.
+        /// </summary>
         async void PingServers()
         {
             while (true)
@@ -135,32 +187,9 @@ namespace LightReflectiveMirror.LoadBalancing
 
                 for (int i = 0; i < keys.Count; i++)
                 {
-                    string url = $"http://{keys[i].EndpointAddress}:{keys[i].EndpointPort}{API_PATH}";
-
-                    using (WebClient wc = new WebClient())
+                    if(!await HealthCheckNode(keys[i].EndpointAddress, keys[i].EndpointPort))
                     {
-                        try
-                        {
-                            var serverStats = wc.DownloadString(url);
-                            var deserializedData = JsonConvert.DeserializeObject<RelayServerInfo>(serverStats);
-
-                            Logger.WriteLogMessage("Server " + keys[i].Address + " still exists, keeping in collection.");
-
-                            // get current server list
-                            deserializedData.serversConnectedToRelay = await GetServerListFromIndividualRelay(keys[i].Address, keys[i].Port);
-
-                            if (availableRelayServers.ContainsKey(keys[i]))
-                                availableRelayServers[keys[i]] = deserializedData;
-                            else
-                                availableRelayServers.Add(keys[i], deserializedData);
-
-                        }
-                        catch
-                        {
-                            // server doesnt exist anymore probably
-                            Logger.WriteLogMessage("Server " + keys[i] + " does not exist anymore, removing", ConsoleColor.Red);
-                            availableRelayServers.Remove(keys[i]);
-                        }
+                        Logger.ForceLogMessage($"Server {keys[i].Address}:{keys[i].Port} failed a health check, removing from load balancer.", ConsoleColor.Red);
                     }
                 }
 

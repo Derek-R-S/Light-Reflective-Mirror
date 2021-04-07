@@ -201,6 +201,19 @@ namespace LightReflectiveMirror
             }
         }
 
+        public async void UpdateLoadbalancerServers()
+        {
+            try
+            {
+                using (WebClient wc = new())
+                {
+                    wc.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
+                    await wc.DownloadStringTaskAsync($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/roomsupdated");
+                }
+            }
+            catch {} // LLB might be down, ignore.
+        }
+
         private async Task<bool> RegisterSelfToLoadBalancer()
         {
             Endpoint.lastPing = DateTime.Now;
@@ -215,7 +228,7 @@ namespace LightReflectiveMirror
                 string gamePort = 7777.ToString();
                 HttpWebRequest authReq = (HttpWebRequest)WebRequest.Create(uri);
 
-                authReq.Headers.Add("x-Auth", conf.LoadBalancerAuthKey);
+                authReq.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
                 authReq.Headers.Add("x-EndpointPort", endpointPort);
                 authReq.Headers.Add("x-GamePort", gamePort);
                 authReq.Headers.Add("x-PIP", publicIP); // Public IP
@@ -230,7 +243,6 @@ namespace LightReflectiveMirror
                 WriteLogMessage("Error registering - Load Balancer probably timed out.", ConsoleColor.Red);
                 return false;
             }
-
         }
 
         void CheckMethods(Type type)

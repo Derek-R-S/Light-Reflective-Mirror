@@ -18,6 +18,8 @@ namespace LightReflectiveMirror.LoadBalancing
     [RestResource]
     public class Endpoint
     {
+        public static string cachedServerList = "[]";
+
         private LoadBalancerStats _stats
         {
             get => new()
@@ -39,7 +41,7 @@ namespace LightReflectiveMirror.LoadBalancing
         public async Task ReceiveAuthKey(IHttpContext context)
         {
             var req = context.Request;
-            string receivedAuthKey = req.Headers["x-Auth"];
+            string receivedAuthKey = req.Headers["Authorization"];
             string endpointPort = req.Headers["x-EndpointPort"];
             string gamePort = req.Headers["x-GamePort"];
             string publicIP = req.Headers["x-PIP"];
@@ -67,6 +69,31 @@ namespace LightReflectiveMirror.LoadBalancing
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
+        }
+
+        /// <summary>
+        /// Called on the load balancer when a relay node had a change in their servers. This recompiles the cached values.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        [RestRoute("Get", "/api/roomsupdated")]
+        public async Task ServerListUpdate(IHttpContext context)
+        {
+            // Dont allow unauthorizated access waste computing resources.
+            string auth = context.Request.Headers["Authorization"];
+
+            if(!string.IsNullOrEmpty(auth) && auth == Program.conf.AuthKey)
+            {
+                var relays = Program.instance.availableRelayServers.ToList();
+                List<Room> masterList = new();
+
+                for(int i = 0; i < relays.Count; i++)
+                {
+                    masterList.AddRange(await Program.instance.RequestServerListFromNode(relays[i].Key.Address, relays[i].Key.EndpointPort));
+                }
+
+                cachedServerList = JsonConvert.SerializeObject(masterList);
+            }
         }
 
         /// <summary>
@@ -102,13 +129,7 @@ namespace LightReflectiveMirror.LoadBalancing
             // if the string is still dummy then theres no servers
             if (lowest.Key.Address != "Dummy")
             {
-                // ping server to ensure its online.
-                var chosenServer = await Program.instance.ManualPingServer(lowest.Key.Address, lowest.Key.EndpointPort);
-
-                if (chosenServer.HasValue)
-                    await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
-                else
-                    await context.Response.SendResponseAsync(HttpStatusCode.BadGateway);
+                await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
             }
             else
             {
@@ -124,24 +145,7 @@ namespace LightReflectiveMirror.LoadBalancing
         [RestRoute("Get", "/api/masterlist/")]
         public async Task GetMasterServerList(IHttpContext context)
         {
-                var relays = Program.instance.availableRelayServers.ToList();
-                List<Room> masterList = new();
-                foreach (var relay in relays)
-                {
-                    var serversOnRelay = await Program.instance.GetServerListFromIndividualRelay(relay.Key.Address, relay.Key.EndpointPort);
-
-                    if (serversOnRelay != null)
-                    {
-                        masterList.AddRange(serversOnRelay);
-                    }
-                    else { continue; }
-                }
-                // we have servers, send em!
-                if (masterList.Any())
-                    await context.Response.SendResponseAsync(JsonConvert.SerializeObject(masterList));
-                // no servers or maybe no relays, fuck you
-                else
-                    await context.Response.SendResponseAsync(HttpStatusCode.RangeNotSatisfiable);
+            await context.Response.SendResponseAsync(cachedServerList);
         }
 
         /// <summary>

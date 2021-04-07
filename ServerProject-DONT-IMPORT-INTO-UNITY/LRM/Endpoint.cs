@@ -41,6 +41,9 @@ namespace LightReflectiveMirror.Endpoints
         {
             _cachedServerList = JsonConvert.SerializeObject(_rooms, Formatting.Indented);
             _cachedCompressedServerList = _cachedServerList.Compress();
+
+            if (Program.conf.UseLoadBalancer)
+                Program.instance.UpdateLoadbalancerServers();
         }
 
         [RestRoute("Get", "/api/stats")]
