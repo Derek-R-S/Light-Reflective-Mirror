@@ -27,7 +27,7 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 * Built in server list!
 * Relay password to stop other games from stealing your precious relay!
 * Relay supports connecting users without them needing to port forward!
-* NAT Punchtrough
+* NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone)
 * Direct Connecting
 * Load Balancing with multi-relay setup
 
