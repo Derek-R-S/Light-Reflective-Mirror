@@ -53,4 +53,5 @@ namespace LightReflectiveMirror.LoadBalancing
     }
 
     public enum LRMRegions { Any, NorthAmerica, SouthAmerica, Europe, Asia, Africa, Oceania }
+    public enum LRMServerOpCode { Clear, Cache };
 }

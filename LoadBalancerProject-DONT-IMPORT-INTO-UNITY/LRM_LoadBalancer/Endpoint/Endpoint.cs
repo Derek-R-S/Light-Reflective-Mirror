@@ -16,35 +16,8 @@ namespace LightReflectiveMirror.LoadBalancing
 {
 
     [RestResource]
-    public class Endpoint
+    public partial class Endpoint
     {
-        public static string allCachedServers = "[]";
-        public static string NorthAmericaCachedServers = "[]";
-        public static string SouthAmericaCachedServers = "[]";
-        public static string EuropeCachedServers = "[]";
-        public static string AsiaCachedServers = "[]";
-        public static string AfricaCachedServers = "[]";
-        public static string OceaniaCachedServers = "[]";
-
-        private static List<Room> northAmericaServers = new();
-        private static List<Room> southAmericaServers = new();
-        private static List<Room> europeServers = new();
-        private static List<Room> africaServers = new();
-        private static List<Room> asiaServers = new();
-        private static List<Room> oceaniaServers = new();
-        private static List<Room> allServers = new();
-
-        private LoadBalancerStats _stats
-        {
-            get => new()
-            {
-                nodeCount = Program.instance.availableRelayServers.Count,
-                uptime = DateTime.Now - Program.startupTime,
-                CCU = Program.instance.GetTotalCCU(),
-                totalServerCount = Program.instance.GetTotalServers(),
-            };
-        }
-
         /// <summary>
         /// Sent from an LRM server node
         /// adds it to the list if authenticated.
@@ -60,13 +33,13 @@ namespace LightReflectiveMirror.LoadBalancing
             string gamePort = req.Headers["x-GamePort"];
             string publicIP = req.Headers["x-PIP"];
             string region = req.Headers["x-Region"];
-            int regionId = 1;
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
             Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
 
             // if server is authenticated
-            if (receivedAuthKey != null && region != null && int.TryParse(region, out regionId) && address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
+            if (receivedAuthKey != null && region != null && int.TryParse(region, out int regionId) && 
+                address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
             {
                 Logger.WriteLogMessage($"Server accepted: {address}:{gamePort}");
 
@@ -101,61 +74,39 @@ namespace LightReflectiveMirror.LoadBalancing
             if (!string.IsNullOrEmpty(auth) && auth == Program.conf.AuthKey)
             {
                 var relays = Program.instance.availableRelayServers.ToList();
-                ClearAllServersLists();
+                PerformActionToAllServers(LRMServerOpCode.Clear);
                 List<Room> requestedRooms;
 
                 for (int i = 0; i < relays.Count; i++)
                 {
                     requestedRooms = await Program.instance.RequestServerListFromNode(relays[i].Key.address, relays[i].Key.endpointPort);
-                    allServers.AddRange(requestedRooms);
+                    _allServers.AddRange(requestedRooms);
 
                     switch (relays[i].Key.serverRegion)
                     {
                         case (LRMRegions.NorthAmerica):
-                            northAmericaServers.AddRange(requestedRooms);
+                            _northAmericaServers.AddRange(requestedRooms);
                             break;
                         case (LRMRegions.SouthAmerica):
-                            southAmericaServers.AddRange(requestedRooms);
+                            _southAmericaServers.AddRange(requestedRooms);
                             break;
                         case (LRMRegions.Europe):
-                            europeServers.AddRange(requestedRooms);
+                            _europeServers.AddRange(requestedRooms);
                             break;
                         case (LRMRegions.Africa):
-                            africaServers.AddRange(requestedRooms);
+                            _africaServers.AddRange(requestedRooms);
                             break;
                         case (LRMRegions.Asia):
-                            asiaServers.AddRange(requestedRooms);
+                            _asiaServers.AddRange(requestedRooms);
                             break;
                         case (LRMRegions.Oceania):
-                            oceaniaServers.AddRange(requestedRooms);
+                            _oceaniaServers.AddRange(requestedRooms);
                             break;
                     }
                 }
 
-                CacheAllServers();
+                PerformActionToAllServers(LRMServerOpCode.Cache);
             }
-        }
-
-        void CacheAllServers()
-        {
-            allCachedServers = JsonConvert.SerializeObject(allServers);
-            NorthAmericaCachedServers = JsonConvert.SerializeObject(northAmericaServers);
-            SouthAmericaCachedServers = JsonConvert.SerializeObject(southAmericaServers);
-            EuropeCachedServers = JsonConvert.SerializeObject(europeServers);
-            AsiaCachedServers = JsonConvert.SerializeObject(asiaServers);
-            AfricaCachedServers = JsonConvert.SerializeObject(africaServers);
-            OceaniaCachedServers = JsonConvert.SerializeObject(oceaniaServers);
-        }
-
-        void ClearAllServersLists()
-        {
-            northAmericaServers.Clear();
-            southAmericaServers.Clear();
-            europeServers.Clear();
-            asiaServers.Clear();
-            africaServers.Clear();
-            oceaniaServers.Clear();
-            allServers.Clear();
         }
 
         /// <summary>
@@ -189,14 +140,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             // respond with the server ip
             // if the string is still dummy then theres no servers
-            if (lowest.Key.address != "Dummy")
-            {
-                await context.Response.SendResponseAsync(JsonConvert.SerializeObject(lowest.Key));
-            }
-            else
-            {
-                await context.Response.SendResponseAsync(HttpStatusCode.InternalServerError);
-            }
+            await context.Response.SendResponseAsync(lowest.Key.address != "Dummy" ? JsonConvert.SerializeObject(lowest.Key) : HttpStatusCode.InternalServerError);
         }
 
         /// <summary>
