@@ -36,7 +36,7 @@ namespace LightReflectiveMirror.LoadBalancing
             string region = req.Headers["x-Region"];
 
             string address = context.Request.RemoteEndPoint.Address.ToString();
-            Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]");
+            Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]", ConsoleColor.Cyan);
 
             // if server is authenticated
             if (receivedAuthKey != null && region != null && int.TryParse(region, out int regionId) && 
@@ -86,22 +86,22 @@ namespace LightReflectiveMirror.LoadBalancing
                     switch (relays[i].Key.serverRegion)
                     {
                         default:
-                        case (LRMRegions.NorthAmerica):
+                        case LRMRegions.NorthAmerica:
                             _northAmericaServers.AddRange(requestedRooms);
                             break;
-                        case (LRMRegions.SouthAmerica):
+                        case LRMRegions.SouthAmerica:
                             _southAmericaServers.AddRange(requestedRooms);
                             break;
-                        case (LRMRegions.Europe):
+                        case LRMRegions.Europe:
                             _europeServers.AddRange(requestedRooms);
                             break;
-                        case (LRMRegions.Africa):
+                        case LRMRegions.Africa:
                             _africaServers.AddRange(requestedRooms);
                             break;
-                        case (LRMRegions.Asia):
+                        case LRMRegions.Asia:
                             _asiaServers.AddRange(requestedRooms);
                             break;
-                        case (LRMRegions.Oceania):
+                        case LRMRegions.Oceania:
                             _oceaniaServers.AddRange(requestedRooms);
                             break;
                     }
@@ -123,6 +123,7 @@ namespace LightReflectiveMirror.LoadBalancing
             // need to copy over in order to avoid
             // collection being modified while iterating.
             var servers = Program.instance.availableRelayServers.ToList();
+            var low = lowest;
 
             if (servers.Count == 0)
             {
@@ -130,19 +131,17 @@ namespace LightReflectiveMirror.LoadBalancing
                 return;
             }
 
-            KeyValuePair<RelayAddress, RelayServerInfo> lowest = new(new RelayAddress { address = "Dummy" }, new RelayServerInfo { connectedClients = int.MaxValue });
-
             for (int i = 0; i < servers.Count; i++)
             {
-                if (servers[i].Value.connectedClients < lowest.Value.connectedClients)
+                if (servers[i].Value.connectedClients < low.Value.connectedClients)
                 {
-                    lowest = servers[i];
+                    low = servers[i];
                 }
             }
 
             // respond with the server ip
             // if the string is still dummy then theres no servers
-            await context.Response.SendResponseAsync(lowest.Key.address != "Dummy" ? JsonConvert.SerializeObject(lowest.Key) : HttpStatusCode.InternalServerError);
+            await context.Response.SendResponseAsync(low.Key.address != "Dummy" ? JsonConvert.SerializeObject(low.Key) : HttpStatusCode.InternalServerError);
         }
 
         /// <summary>
@@ -209,7 +208,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
     #region Startup
 
-    public class EndpointServer
+    public partial class EndpointServer
     {
         public bool Start(ushort port = 7070)
         {
@@ -228,9 +227,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 }, (server) =>
                 {
                     foreach (string ip in GetLocalIps())
-                    {
                         server.Prefixes.Add($"http://{ip}:{port}/");
-                    }
                 }).Build();
 
                 server.Router.Options.SendExceptionMessages = true;
@@ -244,32 +241,7 @@ namespace LightReflectiveMirror.LoadBalancing
             }
         }
 
-        private static List<string> GetLocalIps()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            List<string> bindableIPv4Addresses = new();
-
-            foreach (var ip in host.AddressList)
-            {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    bindableIPv4Addresses.Add(ip.ToString());
-                }
-            }
-
-            bool hasLocal = false;
-
-            for (int i = 0; i < bindableIPv4Addresses.Count; i++)
-            {
-                if (bindableIPv4Addresses[i] == "127.0.0.1")
-                    hasLocal = true;
-            }
-
-            if (!hasLocal)
-                bindableIPv4Addresses.Add("127.0.0.1");
-
-            return bindableIPv4Addresses;
-        }
+        
         #endregion
 
     }

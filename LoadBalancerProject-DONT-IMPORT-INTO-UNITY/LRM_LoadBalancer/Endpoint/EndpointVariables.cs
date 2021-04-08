@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace LightReflectiveMirror.LoadBalancing
 {
     public partial class Endpoint
     {
+        /// <summary>
+        /// Used as a control variable for load balancer to
+        /// give the lowest pop. server
+        /// </summary>
+        private static readonly KeyValuePair<RelayAddress, RelayServerInfo> lowest = 
+            new(new() { address = "Dummy" }, new() { connectedClients = int.MaxValue });
+
         public static string allCachedServers = "[]";
         public static string NorthAmericaCachedServers = "[]";
         public static string SouthAmericaCachedServers = "[]";
