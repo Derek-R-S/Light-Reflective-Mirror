@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine AS builder
 WORKDIR /lrm
 COPY . .
-ARG BUILD_MODE="Release"
+ARG BUILD_MODE="Debug"
 RUN dotnet publish \
     --output /build/ \
     --configuration $BUILD_MODE \
