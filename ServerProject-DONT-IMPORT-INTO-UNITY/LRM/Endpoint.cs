@@ -85,7 +85,7 @@ namespace LightReflectiveMirror.Endpoints
             {
                 var config = new ConfigurationBuilder()
                 .SetBasePath(System.IO.Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .Build();
 
                 var server = new RestServerBuilder(new ServiceCollection(), config, 
