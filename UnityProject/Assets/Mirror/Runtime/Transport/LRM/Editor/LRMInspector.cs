@@ -16,7 +16,7 @@ namespace LightReflectiveMirror
     [CustomEditor(typeof(LightReflectiveMirrorTransport))]
     public class LRMInspector : Editor
     {
-        int serverPort = 7070;
+        int serverPort = 7777;
         string serverIP;
         float invalidServerIP = 0;
         bool usingLLB = false;
