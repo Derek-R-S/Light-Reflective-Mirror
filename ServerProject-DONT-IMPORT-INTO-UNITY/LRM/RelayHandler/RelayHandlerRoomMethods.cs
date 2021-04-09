@@ -19,62 +19,61 @@ namespace LightReflectiveMirror
         {
             LeaveRoom(clientId);
 
-            for (int i = 0; i < rooms.Count; i++)
+            if (_cachedRooms.ContainsKey(serverId))
             {
-                if (rooms[i].serverId == serverId)
+                var room = _cachedRooms[serverId];
+
+                if (room.clients.Count < room.maxPlayers)
                 {
-                    if (rooms[i].clients.Count < rooms[i].maxPlayers)
+                    room.clients.Add(clientId);
+                    _cachedClientRooms.Add(clientId, room);
+
+                    int sendJoinPos = 0;
+                    byte[] sendJoinBuffer = _sendBuffers.Rent(500);
+
+                    if (canDirectConnect && Program.instance.NATConnections.ContainsKey(clientId) && room.supportsDirectConnect)
                     {
-                        rooms[i].clients.Add(clientId);
-                        _cachedClientRooms.Add(clientId, rooms[i]);
+                        sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
 
-                        int sendJoinPos = 0;
-                        byte[] sendJoinBuffer = _sendBuffers.Rent(500);
-
-                        if (canDirectConnect && Program.instance.NATConnections.ContainsKey(clientId) && rooms[i].supportsDirectConnect)
-                        {
-                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
-
-                            if (Program.instance.NATConnections[clientId].Address.Equals(rooms[i].hostIP.Address))
-                                sendJoinBuffer.WriteString(ref sendJoinPos, rooms[i].hostLocalIP == localIP ? "127.0.0.1" : rooms[i].hostLocalIP);
-                            else
-                                sendJoinBuffer.WriteString(ref sendJoinPos, rooms[i].hostIP.Address.ToString());
-
-                            sendJoinBuffer.WriteInt(ref sendJoinPos, rooms[i].useNATPunch ? rooms[i].hostIP.Port : rooms[i].port);
-                            sendJoinBuffer.WriteBool(ref sendJoinPos, rooms[i].useNATPunch);
-
-                            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-
-                            if (rooms[i].useNATPunch)
-                            {
-                                sendJoinPos = 0;
-                                sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
-                                Console.WriteLine(Program.instance.NATConnections[clientId].Address.ToString());
-                                sendJoinBuffer.WriteString(ref sendJoinPos, Program.instance.NATConnections[clientId].Address.ToString());
-                                sendJoinBuffer.WriteInt(ref sendJoinPos, Program.instance.NATConnections[clientId].Port);
-                                sendJoinBuffer.WriteBool(ref sendJoinPos, true);
-
-                                Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                            }
-
-                            _sendBuffers.Return(sendJoinBuffer);
-
-                            Endpoint.RoomsModified();
-                            return;
-                        }
+                        if (Program.instance.NATConnections[clientId].Address.Equals(room.hostIP.Address))
+                            sendJoinBuffer.WriteString(ref sendJoinPos, room.hostLocalIP == localIP ? "127.0.0.1" : room.hostLocalIP);
                         else
+                            sendJoinBuffer.WriteString(ref sendJoinPos, room.hostIP.Address.ToString());
+
+                        sendJoinBuffer.WriteInt(ref sendJoinPos, room.useNATPunch ? room.hostIP.Port : room.port);
+                        sendJoinBuffer.WriteBool(ref sendJoinPos, room.useNATPunch);
+
+                        Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+
+                        if (room.useNATPunch)
                         {
+                            sendJoinPos = 0;
+                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
+                            Console.WriteLine(Program.instance.NATConnections[clientId].Address.ToString());
+                            sendJoinBuffer.WriteString(ref sendJoinPos, Program.instance.NATConnections[clientId].Address.ToString());
+                            sendJoinBuffer.WriteInt(ref sendJoinPos, Program.instance.NATConnections[clientId].Port);
+                            sendJoinBuffer.WriteBool(ref sendJoinPos, true);
 
-                            sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.ServerJoined);
-                            sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
-
-                            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                            Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
-                            _sendBuffers.Return(sendJoinBuffer);
-
-                            Endpoint.RoomsModified();
-                            return;
+                            Program.transport.ServerSend(room.hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
                         }
+
+                        _sendBuffers.Return(sendJoinBuffer);
+
+                        Endpoint.RoomsModified();
+                        return;
+                    }
+                    else
+                    {
+
+                        sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.ServerJoined);
+                        sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
+
+                        Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                        Program.transport.ServerSend(room.hostId, 0, new ArraySegment<byte>(sendJoinBuffer, 0, sendJoinPos));
+                        _sendBuffers.Return(sendJoinBuffer);
+
+                        Endpoint.RoomsModified();
+                        return;
                     }
                 }
             }
@@ -127,6 +126,7 @@ namespace LightReflectiveMirror
 
             rooms.Add(room);
             _cachedClientRooms.Add(clientId, room);
+            _cachedRooms.Add(room.serverId, room);
 
             int pos = 0;
             byte[] sendBuffer = _sendBuffers.Rent(5);
@@ -163,6 +163,7 @@ namespace LightReflectiveMirror
 
                     _sendBuffers.Return(sendBuffer);
                     rooms[i].clients.Clear();
+                    _cachedRooms.Remove(rooms[i].serverId);
                     rooms.RemoveAt(i);
                     _cachedClientRooms.Remove(clientId);
                     Endpoint.RoomsModified();

@@ -116,11 +116,7 @@ namespace LightReflectiveMirror
         /// <returns></returns>
         bool DoesServerIdExist(string id)
         {
-            for (int i = 0; i < rooms.Count; i++)
-                if (rooms[i].serverId == id)
-                    return true;
-
-            return false;
+            return _cachedRooms.ContainsKey(id);
         }
     }
 
