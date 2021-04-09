@@ -25,6 +25,7 @@ namespace LightReflectiveMirror
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
                 // Request and wait for the desired page.
+                webRequest.SetRequestHeader("x-Region", ((int)region).ToString());
                 yield return webRequest.SendWebRequest();
                 var result = webRequest.downloadHandler.text;
 #if UNITY_2020_1_OR_NEWER
