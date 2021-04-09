@@ -43,6 +43,8 @@ namespace LightReflectiveMirror
                     conf.EndpointPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_ENDPOINT_PORT"));
 
                     conf.TransportPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_TRANSPORT_PORT"));
+
+                    conf.NATPunchtroughPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_PUNCHER_PORT"));
                 }
                 catch { }
 
