@@ -78,7 +78,7 @@ namespace LightReflectiveMirror.LoadBalancing
 
             if (availableRelayServers.ContainsKey(relayAddr))
             {
-                Logger.ForceLogMessage($"LRM Node {serverIP}:{port} tried to register while already registered!");
+                Logger.ForceLogMessage($"LRM Node {serverIP}:{endpointPort} tried to register while already registered!");
                 return;
             }
 
@@ -86,12 +86,12 @@ namespace LightReflectiveMirror.LoadBalancing
 
             if (stats.HasValue)
             {
-                Logger.ForceLogMessage($"LRM Node Registered! {serverIP}:{port}", ConsoleColor.Green);
+                Logger.ForceLogMessage($"LRM Node Registered! {serverIP}:{endpointPort}", ConsoleColor.Green);
                 availableRelayServers.Add(relayAddr, stats.Value);
             }
             else
             {
-                Logger.ForceLogMessage($"LRM Node Failed to respond to ping back. Make sure {serverIP}:{port} is port forwarded!");
+                Logger.ForceLogMessage($"LRM Node Failed to respond to ping back. Make sure {serverIP}:{endpointPort} is port forwarded!");
             }
         }
 
