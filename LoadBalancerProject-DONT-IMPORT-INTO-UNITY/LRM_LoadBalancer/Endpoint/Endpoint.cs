@@ -18,7 +18,6 @@ namespace LightReflectiveMirror.LoadBalancing
     [RestResource]
     public partial class Endpoint
     {
-
         /// <summary>
         /// Sent from an LRM server node
         /// adds it to the list if authenticated.
@@ -81,30 +80,8 @@ namespace LightReflectiveMirror.LoadBalancing
                 for (int i = 0; i < relays.Count; i++)
                 {
                     requestedRooms = await Program.instance.RequestServerListFromNode(relays[i].Key.address, relays[i].Key.endpointPort);
-                    _allServers.AddRange(requestedRooms);
-
-                    switch (relays[i].Key.serverRegion)
-                    {
-                        default:
-                        case LRMRegions.NorthAmerica:
-                            _northAmericaServers.AddRange(requestedRooms);
-                            break;
-                        case LRMRegions.SouthAmerica:
-                            _southAmericaServers.AddRange(requestedRooms);
-                            break;
-                        case LRMRegions.Europe:
-                            _europeServers.AddRange(requestedRooms);
-                            break;
-                        case LRMRegions.Africa:
-                            _africaServers.AddRange(requestedRooms);
-                            break;
-                        case LRMRegions.Asia:
-                            _asiaServers.AddRange(requestedRooms);
-                            break;
-                        case LRMRegions.Oceania:
-                            _oceaniaServers.AddRange(requestedRooms);
-                            break;
-                    }
+                    _regionRooms[LRMRegions.Any].AddRange(requestedRooms);
+                    _regionRooms[relays[i].Key.serverRegion].AddRange(requestedRooms);
                 }
 
                 CacheAllServers();
@@ -156,36 +133,12 @@ namespace LightReflectiveMirror.LoadBalancing
 
             if(int.TryParse(region, out int regionID))
             {
-                switch ((LRMRegions)regionID)
-                {
-                    case LRMRegions.Any:
-                        await context.Response.SendResponseAsync(allCachedServers);
-                        break;
-                    case LRMRegions.NorthAmerica:
-                        await context.Response.SendResponseAsync(NorthAmericaCachedServers);
-                        break;
-                    case LRMRegions.SouthAmerica:
-                        await context.Response.SendResponseAsync(SouthAmericaCachedServers);
-                        break;
-                    case LRMRegions.Europe:
-                        await context.Response.SendResponseAsync(EuropeCachedServers);
-                        break;
-                    case LRMRegions.Africa:
-                        await context.Response.SendResponseAsync(AfricaCachedServers);
-                        break;
-                    case LRMRegions.Asia:
-                        await context.Response.SendResponseAsync(AsiaCachedServers);
-                        break;
-                    case LRMRegions.Oceania:
-                        await context.Response.SendResponseAsync(OceaniaCachedServers);
-                        break;
-                }
-
+                await context.Response.SendResponseAsync(_cachedRegionRooms[(LRMRegions)regionID]);
                 return;
             }
 
             // They didnt submit a region header, just give them all servers as they probably are viewing in browser.
-            await context.Response.SendResponseAsync(allCachedServers);
+            await context.Response.SendResponseAsync(_cachedRegionRooms[LRMRegions.Any]);
         }
 
         /// <summary>
@@ -204,6 +157,15 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             await context.Response.SendResponseAsync(Program.instance.GenerateServerID());
         }
+
+        public static void Initialize()
+        {
+            foreach (LRMRegions region in Enum.GetValues(typeof(LRMRegions)))
+            {
+                _regionRooms.Add(region, new());
+                _cachedRegionRooms.Add(region, "[]");
+            }
+        }
     }
 
     #region Startup
@@ -214,6 +176,9 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             try
             {
+                // Initialize the region variables
+                Endpoint.Initialize();
+
                 var config = new ConfigurationBuilder()
                 .SetBasePath(System.IO.Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)

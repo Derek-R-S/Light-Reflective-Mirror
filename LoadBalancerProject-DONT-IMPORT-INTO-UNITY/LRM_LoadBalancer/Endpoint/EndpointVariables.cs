@@ -11,21 +11,8 @@ namespace LightReflectiveMirror.LoadBalancing
         private static readonly KeyValuePair<RelayAddress, RelayServerInfo> lowest = 
             new(new() { address = "Dummy" }, new() { connectedClients = int.MaxValue });
 
-        public static string allCachedServers = "[]";
-        public static string NorthAmericaCachedServers = "[]";
-        public static string SouthAmericaCachedServers = "[]";
-        public static string EuropeCachedServers = "[]";
-        public static string AsiaCachedServers = "[]";
-        public static string AfricaCachedServers = "[]";
-        public static string OceaniaCachedServers = "[]";
-
-        private static List<Room> _northAmericaServers = new();
-        private static List<Room> _southAmericaServers = new();
-        private static List<Room> _europeServers = new();
-        private static List<Room> _africaServers = new();
-        private static List<Room> _asiaServers = new();
-        private static List<Room> _oceaniaServers = new();
-        private static List<Room> _allServers = new();
+        private static Dictionary<LRMRegions, List<Room>> _regionRooms = new();
+        private static Dictionary<LRMRegions, string> _cachedRegionRooms = new();
 
         private LoadBalancerStats _stats
         {
