@@ -107,6 +107,11 @@ namespace LightReflectiveMirror.LoadBalancing
             // collection being modified while iterating.
             var servers = Program.instance.availableRelayServers.ToList();
             var low = lowest;
+            var lowestTotal = lowest;
+            var region = context.Request.Headers["x-Region"];
+
+            // If we cant parse it (due to not being included or not being valid) then just join any region.
+            int regionID = int.TryParse(region, out regionID) ? regionID : 0;
 
             if (servers.Count == 0)
             {
@@ -114,13 +119,24 @@ namespace LightReflectiveMirror.LoadBalancing
                 return;
             }
 
+            bool foundServerInRegion = false;
             for (int i = 0; i < servers.Count; i++)
             {
                 if (servers[i].Value.connectedClients < low.Value.connectedClients)
                 {
-                    low = servers[i];
+                    if ((int)servers[i].Key.serverRegion == regionID)
+                    {
+                        low = servers[i];
+                        foundServerInRegion = true;
+                    }
+
+                    lowestTotal = servers[i];
                 }
             }
+
+            // If the region didnt have a single node, then just give him the lowest node we looped over.
+            if (!foundServerInRegion)
+                low = lowestTotal;
 
             // respond with the server ip
             // if the string is still dummy then theres no servers
