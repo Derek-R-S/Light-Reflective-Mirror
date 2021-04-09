@@ -88,6 +88,10 @@ namespace LightReflectiveMirror.LoadBalancing
                 Logger.ForceLogMessage($"LRM Node Registered! {serverIP}:{port}", ConsoleColor.Green);
                 availableRelayServers.Add(relayAddr, stats.Value);
             }
+            else
+            {
+                Logger.ForceLogMessage($"LRM Node Failed to respond to ping back. Make sure {serverIP}:{port} is port forwarded!");
+            }
         }
 
         /// <summary>
