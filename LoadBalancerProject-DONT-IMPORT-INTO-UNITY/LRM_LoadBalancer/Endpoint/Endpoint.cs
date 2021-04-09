@@ -77,11 +77,17 @@ namespace LightReflectiveMirror.LoadBalancing
                 ClearAllServersLists();
                 List<Room> requestedRooms;
 
+                Program.cachedRooms.Clear();
+
                 for (int i = 0; i < relays.Count; i++)
                 {
                     requestedRooms = await Program.instance.RequestServerListFromNode(relays[i].Key.address, relays[i].Key.endpointPort);
                     _regionRooms[LRMRegions.Any].AddRange(requestedRooms);
                     _regionRooms[relays[i].Key.serverRegion].AddRange(requestedRooms);
+
+                    for (int x = 0; x < requestedRooms.Count; x++)
+                        if (!Program.cachedRooms.TryAdd(requestedRooms[x].serverId, requestedRooms[x]))
+                            Logger.ForceLogMessage("Conflicting Rooms! (That's ok)", ConsoleColor.Yellow);
                 }
 
                 CacheAllServers();

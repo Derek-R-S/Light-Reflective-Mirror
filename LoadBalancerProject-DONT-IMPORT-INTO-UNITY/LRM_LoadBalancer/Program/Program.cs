@@ -15,6 +15,7 @@ namespace LightReflectiveMirror.LoadBalancing
         /// Keeps track of all the LRM nodes registered to the Load Balancer.
         /// </summary>
         public Dictionary<RelayAddress, RelayServerInfo> availableRelayServers = new();
+        public static Dictionary<string, Room> cachedRooms = new();
 
         private int _pingDelay = 10000;
         public static bool showDebugLogs = false;
