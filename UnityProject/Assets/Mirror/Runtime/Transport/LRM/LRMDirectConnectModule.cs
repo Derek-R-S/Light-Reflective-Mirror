@@ -57,8 +57,11 @@ public class LRMDirectConnectModule : MonoBehaviour
 
     public void JoinServer(string ip, int port)
     {
-        if(SupportsNATPunch())
+        if (SupportsNATPunch())
             SetTransportPort(port);
+
+
+
         directConnectTransport.ClientConnect(ip);
     }
 

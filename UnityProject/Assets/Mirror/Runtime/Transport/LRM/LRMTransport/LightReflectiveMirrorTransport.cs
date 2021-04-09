@@ -63,7 +63,6 @@ namespace LightReflectiveMirror
         private void OnConnectedToRelay()
         {
             _connectedToRelay = true;
-            RequestServerList();
         }
 
         public void ConnectToRelay()
@@ -157,6 +156,7 @@ namespace LightReflectiveMirror
                     case OpCodes.Authenticated:
                         serverStatus = "Authenticated! Good to go!";
                         _isAuthenticated = true;
+                        RequestServerList();
                         break;
                     case OpCodes.AuthenticationRequest:
                         serverStatus = "Sent authentication to relay...";
@@ -229,7 +229,12 @@ namespace LightReflectiveMirror
                             }
 
                             if (useNATPunch && attemptNatPunch)
-                                _directConnectModule.JoinServer("127.0.0.1", _NATIP.Port - 1);
+                            {
+                                if (ip == "127.0.0.1")
+                                    _directConnectModule.JoinServer("127.0.0.1", port + 1);
+                                else
+                                    _directConnectModule.JoinServer("127.0.0.1", _NATIP.Port - 1);
+                            }
                             else
                                 _directConnectModule.JoinServer(ip, port);
                         }
@@ -336,7 +341,7 @@ namespace LightReflectiveMirror
             }
         }
 
-        Room GetServerForID(string serverID)
+        Room? GetServerForID(string serverID)
         {
             for(int i = 0; i < relayServerList.Count; i++)
             {
@@ -344,8 +349,7 @@ namespace LightReflectiveMirror
                     return relayServerList[i];
             }
 
-            OnClientDisconnected?.Invoke();
-            throw new Exception("LRM | An attempt was made to connect to a server which does not exist!");
+            return null;
         }
 
         void SendAuthKey()

@@ -61,6 +61,7 @@ namespace LightReflectiveMirror
         private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy>();
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
         private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
+        private bool _serverListUpdated = false;
     }
 
     public enum LRMRegions { Any, NorthAmerica, SouthAmerica, Europe, Asia, Africa, Oceania }

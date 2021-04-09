@@ -58,8 +58,34 @@ namespace LightReflectiveMirror
             }
         }
 
-        IEnumerator JoinOtherRelayAndMatch(Room room)
+        IEnumerator JoinOtherRelayAndMatch(Room? roomValue, string ID)
         {
+            var room = new Room();
+
+            // using load balancer, we NEED the server's relay address
+            if (roomValue.HasValue)
+                room = roomValue.Value;
+            else
+            {
+                _serverListUpdated = false;
+                RequestServerList();
+
+                yield return new WaitUntil(() => _serverListUpdated);
+
+                var foundRoom = GetServerForID(ID);
+
+                if (foundRoom.HasValue)
+                {
+                    room = foundRoom.Value;
+                }
+                else
+                {
+                    Debug.LogWarning("LRM | Client tried to join a server that does not exist!");
+                    OnClientDisconnected?.Invoke();
+                    yield break;
+                }
+            }
+
             // Wait for disconnection
             DisconnectFromRelay();
 
@@ -166,6 +192,7 @@ namespace LightReflectiveMirror
                         relayServerList?.Clear();
                         relayServerList = JsonConvert.DeserializeObject<List<Room>>(result);
                         serverListUpdated?.Invoke();
+                        _serverListUpdated = true;
                         break;
                 }
 #else
@@ -178,6 +205,7 @@ namespace LightReflectiveMirror
                     relayServerList?.Clear();
                     relayServerList = JsonConvert.DeserializeObject<List<Room>>(result);
                     serverListUpdated?.Invoke();
+                    _serverListUpdated = true;
                 }
 #endif
             }

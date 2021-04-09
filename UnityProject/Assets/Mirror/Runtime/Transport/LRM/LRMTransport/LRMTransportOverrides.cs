@@ -72,26 +72,34 @@ namespace LightReflectiveMirror
 
             var room = GetServerForID(address);
 
-            if (!useLoadBalancer || room.relayInfo.Address == serverIP)
+            if (!useLoadBalancer)
             {
-                int pos = 0;
-                _directConnected = false;
-                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
-                _clientSendBuffer.WriteString(ref pos, address);
-                _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
+                if (room.HasValue && room.Value.relayInfo.Address == serverIP)
+                {
+                    int pos = 0;
+                    _directConnected = false;
+                    _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
+                    _clientSendBuffer.WriteString(ref pos, address);
+                    _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
 
-                if (GetLocalIp() == null)
-                    _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+                    if (GetLocalIp() == null)
+                        _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+                    else
+                        _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+
+                    _isClient = true;
+
+                    clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
+                }
                 else
-                    _clientSendBuffer.WriteString(ref pos, GetLocalIp());
-
-                _isClient = true;
-
-                clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
+                {
+                    OnClientDisconnected?.Invoke();
+                    Debug.LogWarning("LRM | Client tried to join server that doesnt exist!");
+                }
             }
             else
             {
-                StartCoroutine(JoinOtherRelayAndMatch(room));
+                StartCoroutine(JoinOtherRelayAndMatch(room, address));
             }
         }
 

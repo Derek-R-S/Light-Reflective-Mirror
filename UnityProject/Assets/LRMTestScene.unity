@@ -195,6 +195,59 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 45, y: 180, z: 0}
+--- !u!1 &126344731
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 126344733}
+  - component: {fileID: 126344732}
+  m_Layer: 0
+  m_Name: LRM - Direct Connect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &126344732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 126344731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b0fecffa3f624585964b0d0eb21b18e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Port: 7777
+  NoDelay: 1
+  Interval: 10
+  FastResend: 2
+  CongestionWindow: 0
+  SendWindowSize: 4096
+  ReceiveWindowSize: 4096
+  debugLog: 0
+  statisticsGUI: 0
+  statisticsLog: 0
+--- !u!4 &126344733
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 126344731}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1282001518}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &171810013
 GameObject:
   m_ObjectHideFlags: 0
@@ -1086,6 +1139,7 @@ GameObject:
   - component: {fileID: 1282001520}
   - component: {fileID: 1282001519}
   - component: {fileID: 1282001521}
+  - component: {fileID: 1282001522}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1105,6 +1159,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1884364513}
+  - {fileID: 126344733}
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1177,9 +1232,9 @@ MonoBehaviour:
   diconnectedFromRelay:
     m_PersistentCalls:
       m_Calls: []
-  useNATPunch: 0
+  useNATPunch: 1
   NATPunchtroughPort: 1
-  useLoadBalancer: 0
+  useLoadBalancer: 1
   loadBalancerPort: 7070
   loadBalancerAddress: 172.105.109.117
   serverName: My awesome server!
@@ -1191,6 +1246,21 @@ MonoBehaviour:
       m_Calls: []
   serverStatus: Not Started.
   serverId: 
+  region: 1
+--- !u!114 &1282001522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1282001517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c4cbff877abc42448dd829920c6c233, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  directConnectTransport: {fileID: 126344732}
+  showDebugLogs: 0
 --- !u!1 &1458789072
 GameObject:
   m_ObjectHideFlags: 0
