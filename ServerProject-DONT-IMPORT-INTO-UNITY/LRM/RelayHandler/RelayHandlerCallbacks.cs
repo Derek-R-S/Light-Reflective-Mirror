@@ -71,7 +71,7 @@ namespace LightReflectiveMirror
                         ProcessData(clientId, data.ReadBytes(ref pos), channel, data.ReadInt(ref pos));
                         break;
                     case OpCodes.UpdateRoomData:
-                        var plyRoom = GetRoomForPlayer(clientId);
+                        var plyRoom = _cachedClientRooms[clientId];
 
                         if (plyRoom == null)
                             return;

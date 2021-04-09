@@ -23,12 +23,10 @@ namespace LightReflectiveMirror
         /// <param name="sendTo">Who to relay the data to</param>
         void ProcessData(int clientId, byte[] clientData, int channel, int sendTo = -1)
         {
-            Room playersRoom = GetRoomForPlayer(clientId);
+            Room room = _cachedClientRooms[clientId];
 
-            if(playersRoom != null)
+            if(room != null)
             {
-                Room room = playersRoom;
-
                 if(room.hostId == clientId)
                 {
                     if (room.clients.Contains(sendTo))

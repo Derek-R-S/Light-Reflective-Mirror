@@ -7,24 +7,6 @@ namespace LightReflectiveMirror
 {
     public partial class RelayHandler
     {
-        /// <summary>
-        /// Returns the current room the client is in, null if client is not in a room.
-        /// </summary>
-        /// <param name="clientId">The client we are getting the room for</param>
-        /// <returns></returns>
-        Room GetRoomForPlayer(int clientId)
-        {
-            for (int i = 0; i < rooms.Count; i++)
-            {
-                if (rooms[i].hostId == clientId)
-                    return rooms[i];
-
-                if (rooms[i].clients.Contains(clientId))
-                    return rooms[i];
-            }
-
-            return null;
-        }
 
         /// <summary>
         /// Attempts to join a room for a client.
@@ -44,6 +26,7 @@ namespace LightReflectiveMirror
                     if (rooms[i].clients.Count < rooms[i].maxPlayers)
                     {
                         rooms[i].clients.Add(clientId);
+                        _cachedClientRooms.Add(clientId, rooms[i]);
 
                         int sendJoinPos = 0;
                         byte[] sendJoinBuffer = _sendBuffers.Rent(500);
@@ -143,6 +126,7 @@ namespace LightReflectiveMirror
             };
 
             rooms.Add(room);
+            _cachedClientRooms.Add(clientId, room);
 
             int pos = 0;
             byte[] sendBuffer = _sendBuffers.Rent(5);
@@ -172,17 +156,21 @@ namespace LightReflectiveMirror
                     sendBuffer.WriteByte(ref pos, (byte)OpCodes.ServerLeft);
 
                     for (int x = 0; x < rooms[i].clients.Count; x++)
+                    {
                         Program.transport.ServerSend(rooms[i].clients[x], 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+                        _cachedClientRooms.Remove(rooms[i].clients[x]);
+                    }
 
                     _sendBuffers.Return(sendBuffer);
                     rooms[i].clients.Clear();
                     rooms.RemoveAt(i);
+                    _cachedClientRooms.Remove(clientId);
                     Endpoint.RoomsModified();
                     return;
                 }
                 else
                 {
-                    if (requiredHostId >= 0 && rooms[i].hostId != requiredHostId)
+                    if (requiredHostId != -1 && rooms[i].hostId != requiredHostId)
                         continue;
 
                     if (rooms[i].clients.RemoveAll(x => x == clientId) > 0)
@@ -196,6 +184,7 @@ namespace LightReflectiveMirror
                         Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
                         _sendBuffers.Return(sendBuffer);
                         Endpoint.RoomsModified();
+                        _cachedClientRooms.Remove(clientId);
                     }
                 }
             }
