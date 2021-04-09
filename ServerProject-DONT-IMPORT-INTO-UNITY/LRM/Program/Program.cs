@@ -48,7 +48,7 @@ namespace LightReflectiveMirror
 
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
-                { 
+                {
                     var asm = Assembly.LoadFile(Path.GetFullPath(conf.TransportDLL));
                     WriteLogMessage($"OK", ConsoleColor.Green);
 
@@ -75,7 +75,7 @@ namespace LightReflectiveMirror
 
                         WriteLogMessage("\nStarting Transport... ", ConsoleColor.White, true);
 
-                        transport.OnServerError = (clientID, error) => 
+                        transport.OnServerError = (clientID, error) =>
                         {
                             WriteLogMessage($"Transport Error, Client: {clientID}, Error: {error}", ConsoleColor.Red);
                         };
@@ -106,10 +106,10 @@ namespace LightReflectiveMirror
                             _currentConnections.Remove(clientID);
                             _relay.HandleDisconnect(clientID);
 
-                            if(NATConnections.ContainsKey(clientID))
+                            if (NATConnections.ContainsKey(clientID))
                                 NATConnections.Remove(clientID);
 
-                            if(_pendingNATPunches.TryGetByFirst(clientID, out _))
+                            if (_pendingNATPunches.TryGetByFirst(clientID, out _))
                                 _pendingNATPunches.Remove(clientID);
                         };
 
@@ -150,12 +150,12 @@ namespace LightReflectiveMirror
                                 {
                                     natThread.Start();
                                 }
-                                catch(Exception e)
+                                catch (Exception e)
                                 {
                                     WriteLogMessage("FAILED\n" + e, ConsoleColor.DarkRed);
                                 }
                             }
-                            catch(Exception e)
+                            catch (Exception e)
                             {
                                 WriteLogMessage("FAILED\nCheck if port is in use.", ConsoleColor.DarkRed, true);
                                 Console.WriteLine(e);
@@ -169,7 +169,7 @@ namespace LightReflectiveMirror
                         Environment.Exit(0);
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     WriteLogMessage("FAILED\nException: " + e, ConsoleColor.DarkRed);
                     Console.ReadKey();
@@ -182,16 +182,24 @@ namespace LightReflectiveMirror
 
             while (true)
             {
-                if (_updateMethod != null) _updateMethod.Invoke(transport, null); 
-                if (_lateUpdateMethod != null) _lateUpdateMethod.Invoke(transport, null); 
+                try
+                {
+                    if (_updateMethod != null) _updateMethod.Invoke(transport, null);
+                    if (_lateUpdateMethod != null) _lateUpdateMethod.Invoke(transport, null);
+                }
+                catch (Exception e)
+                {
+                    WriteLogMessage("Error During Transport Update! " + e, ConsoleColor.Red);
+                }
+
 
                 _currentHeartbeatTimer++;
 
-                if(_currentHeartbeatTimer >= conf.UpdateHeartbeatInterval)
+                if (_currentHeartbeatTimer >= conf.UpdateHeartbeatInterval)
                 {
                     _currentHeartbeatTimer = 0;
 
-                    for(int i = 0; i < _currentConnections.Count; i++)
+                    for (int i = 0; i < _currentConnections.Count; i++)
                         transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(new byte[] { 200 }));
 
                     if (conf.UseLoadBalancer)
@@ -220,7 +228,7 @@ namespace LightReflectiveMirror
                     await wc.DownloadStringTaskAsync($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/roomsupdated");
                 }
             }
-            catch {} // LLB might be down, ignore.
+            catch { } // LLB might be down, ignore.
         }
 
         private async Task<bool> RegisterSelfToLoadBalancer()
@@ -257,10 +265,10 @@ namespace LightReflectiveMirror
 
         void CheckMethods(Type type)
         {
-            _awakeMethod         = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            _startMethod         = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            _updateMethod        = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            _lateUpdateMethod    = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _awakeMethod = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _startMethod = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _updateMethod = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _lateUpdateMethod = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         }
     }
 }
