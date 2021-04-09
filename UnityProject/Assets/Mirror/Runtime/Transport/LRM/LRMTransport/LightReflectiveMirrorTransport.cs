@@ -12,7 +12,6 @@ namespace LightReflectiveMirror
     [DefaultExecutionOrder(1001)]
     public partial class LightReflectiveMirrorTransport : Transport
     {
-        private void OnConnectedToRelay() => _connectedToRelay = true;
         public bool IsAuthenticated() => _isAuthenticated;
         private void Awake()
         {
@@ -59,6 +58,12 @@ namespace LightReflectiveMirror
             _isAuthenticated = false;
             diconnectedFromRelay?.Invoke();
             serverStatus = "Disconnected from relay.";
+        }
+
+        private void OnConnectedToRelay()
+        {
+            _connectedToRelay = true;
+            RequestServerList();
         }
 
         public void ConnectToRelay()
