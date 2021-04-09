@@ -24,7 +24,16 @@ namespace LightReflectiveMirror
             instance = this;
             _startupTime = DateTime.Now;
             using (WebClient wc = new WebClient())
-                publicIP = wc.DownloadString("http://ipv4.icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
+            {
+                try
+                {
+                    publicIP = wc.DownloadString("http://ipv4.icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
+                }
+                catch {
+                    WriteLogMessage("Failed to reach public IP endpoint! Using loopback address.", ConsoleColor.Yellow);
+                    publicIP = "127.0.0.1";
+                }
+            }
 
             if (!File.Exists(CONFIG_PATH))
             {

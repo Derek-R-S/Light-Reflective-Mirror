@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+
 namespace LightReflectiveMirror.LoadBalancing
 {
     public partial class Endpoint
@@ -22,6 +24,7 @@ namespace LightReflectiveMirror.LoadBalancing
                 uptime = DateTime.Now - Program.startupTime,
                 CCU = Program.instance.GetTotalCCU(),
                 totalServerCount = Program.instance.GetTotalServers(),
+                connectedNodes = Program.instance.availableRelayServers.ToList()
             };
         }
     }

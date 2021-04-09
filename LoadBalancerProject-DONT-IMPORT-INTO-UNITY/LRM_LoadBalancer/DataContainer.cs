@@ -24,6 +24,7 @@ namespace LightReflectiveMirror.LoadBalancing
         public TimeSpan uptime;
         public long CCU;
         public long totalServerCount;
+        public List<KeyValuePair<RelayAddress, RelayServerInfo>> connectedNodes;
     }
 
     // container for relay address info
