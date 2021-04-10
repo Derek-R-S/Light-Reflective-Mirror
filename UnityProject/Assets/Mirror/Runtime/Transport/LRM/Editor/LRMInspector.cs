@@ -53,6 +53,7 @@ namespace LightReflectiveMirror
                     lrm.loadBalancerAddress = "127.0.0.1";
                     lrm.useLoadBalancer = false;
                     usingLLB = false;
+                    serverIP = "172.105.109.117";
                 }
             }
             else if (usingLLB)
@@ -120,7 +121,6 @@ namespace LightReflectiveMirror
                 // Empty server IP, this is pretty important! Lets show the UI to require it.
                 EditorGUILayout.HelpBox("For a single LRM node setup, we need the IP address or domain name of your LRM server.", MessageType.None);
                 EditorGUILayout.HelpBox("Acceptable Examples: 172.105.109.117, mydomain.com", MessageType.Info);
-                serverIP = "172.105.109.117";
 
                 if (Time.realtimeSinceStartup - invalidServerIP < 5)
                     EditorGUILayout.HelpBox("Invalid Server Address!", MessageType.Error);
