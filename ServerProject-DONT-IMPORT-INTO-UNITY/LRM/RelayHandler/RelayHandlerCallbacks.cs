@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LightReflectiveMirror.Endpoints;
+using System;
 
 namespace LightReflectiveMirror
 {
@@ -81,22 +82,19 @@ namespace LightReflectiveMirror
                         if (plyRoom == null || plyRoom.hostId != clientId)
                             return;
 
-                        bool newName = data.ReadBool(ref pos);
-                        if (newName)
+                        if (data.ReadBool(ref pos))
                             plyRoom.serverName = data.ReadString(ref pos);
 
-                        bool newData = data.ReadBool(ref pos);
-                        if (newData)
+                        if (data.ReadBool(ref pos))
                             plyRoom.serverData = data.ReadString(ref pos);
 
-                        bool newPublicStatus = data.ReadBool(ref pos);
-                        if (newPublicStatus)
+                        if (data.ReadBool(ref pos))
                             plyRoom.isPublic = data.ReadBool(ref pos);
 
-                        bool newPlayerCap = data.ReadBool(ref pos);
-                        if (newPlayerCap)
+                        if (data.ReadBool(ref pos))
                             plyRoom.maxPlayers = data.ReadInt(ref pos);
 
+                        Endpoint.RoomsModified();
                         break;
                 }
             }
