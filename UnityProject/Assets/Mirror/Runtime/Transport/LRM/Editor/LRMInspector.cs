@@ -45,6 +45,7 @@ namespace LightReflectiveMirror
                 {
                     usingLLB = true;
                     lrm.loadBalancerAddress = "127.0.0.1";
+                    serverPort = 7070;
                 }
 
                 if (GUILayout.Button("Single LRM Node Setup"))
@@ -218,7 +219,7 @@ namespace LightReflectiveMirror
                 currentTab = GUILayout.Toolbar(currentTab, tabs);
                 EditorGUILayout.Space();
 
-                EditorGUILayout.BeginVertical("Box");
+                EditorGUILayout.BeginVertical("Window");
                 switch (currentTab)
                 {
                     case 0:
@@ -251,7 +252,15 @@ namespace LightReflectiveMirror
                         }
                         else
                         {
+                            if (!(directModule.directConnectTransport is KcpTransport))
+                            {
+                                EditorGUILayout.HelpBox("NAT Punch only supports KCP currently.", MessageType.Info);
+                                GUI.enabled = false;
+                                lrm.useNATPunch = false;
+                            }
+
                             lrm.useNATPunch = EditorGUILayout.Toggle("Use NAT Punch", lrm.useNATPunch);
+                            GUI.enabled = true;
                             directModule.directConnectTransport = (Transport)EditorGUILayout.ObjectField("Direct Transport", directModule.directConnectTransport, typeof(Transport), true);
                         }
                         break;
