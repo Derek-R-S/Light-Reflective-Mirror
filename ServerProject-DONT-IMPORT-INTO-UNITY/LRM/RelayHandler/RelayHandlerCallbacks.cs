@@ -46,6 +46,11 @@ namespace LightReflectiveMirror
                             sendBuffer.WriteByte(ref writePos, (byte)OpCodes.Authenticated);
                             Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, writePos));
                         }
+                        else
+                        {
+                            Program.WriteLogMessage($"Client {clientId} sent wrong auth key! Removing from LRM node.");
+                            Program.transport.ServerDisconnect(clientId);
+                        }
                     }
                     return;
                 }
@@ -73,7 +78,7 @@ namespace LightReflectiveMirror
                     case OpCodes.UpdateRoomData:
                         var plyRoom = _cachedClientRooms[clientId];
 
-                        if (plyRoom == null)
+                        if (plyRoom == null || plyRoom.hostId != clientId)
                             return;
 
                         bool newName = data.ReadBool(ref pos);

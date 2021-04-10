@@ -192,6 +192,20 @@ namespace LightReflectiveMirror
             {
                 // They have completed the "setup guide" Show them the main UI
 
+                // Remove unused transports...
+                foreach(var transport in lrm.GetComponentsInChildren<Transport>())
+                {
+                    if(!(transport is LightReflectiveMirrorTransport))
+                    {
+                        if(transport != lrm.clientToServerTransport && (directModule == null ? true : directModule.directConnectTransport != transport))
+                        {
+                            if (transport.gameObject == lrm.gameObject)
+                                DestroyImmediate(transport);
+                            else
+                                DestroyImmediate(transport.gameObject);
+                        }
+                    }
+                }
 #if !NET_4_6
                 EditorGUILayout.BeginVertical("Box");
                 EditorGUILayout.HelpBox("For LRM to function properly, it needs the API Compatibility to be at 4.x", MessageType.Error);
@@ -231,7 +245,9 @@ namespace LightReflectiveMirror
                         // NAT punch tab.
                         if (directModule == null)
                         {
-                            EditorGUILayout.HelpBox("If you wish to use NAT punch, you will need to add a \"Direct Connect Module\" to this gameobject.", MessageType.Info);
+                            EditorGUILayout.HelpBox("NAT Punchthrough disabled, missing Direct Connect.", MessageType.Info);
+                            if (GUILayout.Button("Add Direct Connect"))
+                                lrm.gameObject.AddComponent<LRMDirectConnectModule>();
                         }
                         else
                         {

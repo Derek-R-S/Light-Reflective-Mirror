@@ -10,7 +10,7 @@ namespace LightReflectiveMirror
         public TimeSpan GetUptime() => DateTime.Now - _startupTime;
         public int GetPublicRoomCount() => _relay.rooms.Where(x => x.isPublic).Count();
 
-        static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White, bool oneLine = false)
+        public static void WriteLogMessage(string message, ConsoleColor color = ConsoleColor.White, bool oneLine = false)
         {
             Console.ForegroundColor = color;
             if (oneLine)
