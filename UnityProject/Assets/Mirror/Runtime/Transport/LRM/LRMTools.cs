@@ -45,9 +45,16 @@ namespace LightReflectiveMirror
 
         public static void WriteString(this byte[] data, ref int position, string value)
         {
-            data.WriteInt(ref position, value.Length);
-            for (int i = 0; i < value.Length; i++)
-                data.WriteChar(ref position, value[i]);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                data.WriteInt(ref position, 0);
+            }
+            else
+            {
+                data.WriteInt(ref position, value.Length);
+                for (int i = 0; i < value.Length; i++)
+                    data.WriteChar(ref position, value[i]);
+            }
         }
 
         public static string ReadString(this byte[] data, ref int position)
