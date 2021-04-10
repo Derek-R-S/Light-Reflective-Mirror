@@ -47,15 +47,21 @@ namespace LightReflectiveMirror
                 conf = JsonConvert.DeserializeObject<Config>(File.ReadAllText(CONFIG_PATH));
 
                 // Docker variables.
-                try
+                if (ushort.TryParse(Environment.GetEnvironmentVariable("LRM_ENDPOINT_PORT"), out ushort endpointPort))
+                    conf.EndpointPort = endpointPort;
+
+                if (ushort.TryParse(Environment.GetEnvironmentVariable("LRM_TRANSPORT_PORT"), out ushort transportPort))
+                    conf.TransportPort = transportPort;
+
+                if (ushort.TryParse(Environment.GetEnvironmentVariable("LRM_PUNCHER_PORT"), out ushort puncherPort))
+                    conf.NATPunchtroughPort = puncherPort;
+
+                string LBAuthKey = Environment.GetEnvironmentVariable("LRM_LB_AUTHKEY");
+                if (!string.IsNullOrWhiteSpace(LBAuthKey))
                 {
-                    conf.EndpointPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_ENDPOINT_PORT"));
-
-                    conf.TransportPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_TRANSPORT_PORT"));
-
-                    conf.NATPunchtroughPort = ushort.Parse(Environment.GetEnvironmentVariable("LRM_PUNCHER_PORT"));
+                    conf.LoadBalancerAuthKey = LBAuthKey;
+                    WriteLogMessage("\nLoaded LB auth key from environment variable\n", ConsoleColor.Green);
                 }
-                catch { }
 
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
