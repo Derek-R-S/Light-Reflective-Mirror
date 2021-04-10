@@ -10,10 +10,10 @@ namespace LightReflectiveMirror
     public partial class LightReflectiveMirrorTransport : Transport
     {
 
-        public void RequestServerList()
+        public void RequestServerList(LRMRegions searchRegion = LRMRegions.Any)
         {
             if (_isAuthenticated && _connectedToRelay)
-                StartCoroutine(GetServerList());
+                StartCoroutine(GetServerList(searchRegion));
             else
                 Debug.Log("You must be connected to Relay to request server list!");
         }
@@ -115,7 +115,7 @@ namespace LightReflectiveMirror
             clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
         }
 
-        IEnumerator GetServerList()
+        IEnumerator GetServerList(LRMRegions region)
         {
             if (!useLoadBalancer)
             {
@@ -158,7 +158,7 @@ namespace LightReflectiveMirror
             }
             else // get master list from load balancer
             {
-                yield return StartCoroutine(RetrieveMasterServerListFromLoadBalancer());
+                yield return StartCoroutine(RetrieveMasterServerListFromLoadBalancer(region));
             }
 
         }
@@ -169,7 +169,7 @@ namespace LightReflectiveMirror
         /// own separate method, so i can understand wtf is going on :D
         /// </summary>
         /// <returns></returns>
-        IEnumerator RetrieveMasterServerListFromLoadBalancer()
+        IEnumerator RetrieveMasterServerListFromLoadBalancer(LRMRegions region)
         {
             string uri = $"http://{loadBalancerAddress}:{loadBalancerPort}/api/masterlist/";
 
