@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace LightReflectiveMirror
 {
     partial class Program
     {
-
+        public List<Room> GetRooms() => _relay.rooms;
         public int GetConnections() => _currentConnections.Count;
         public TimeSpan GetUptime() => DateTime.Now - _startupTime;
         public int GetPublicRoomCount() => _relay.rooms.Where(x => x.isPublic).Count();
@@ -17,6 +18,20 @@ namespace LightReflectiveMirror
                 Console.Write(message);
             else
                 Console.WriteLine(message);
+        }
+
+        private static void GetPublicIP()
+        {
+            try
+            {
+                // easier to just ping an outside source to get our public ip
+                publicIP = webClient.DownloadString("http://ipv4.icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
+            }
+            catch
+            {
+                WriteLogMessage("Failed to reach public IP endpoint! Using loopback address.", ConsoleColor.Yellow);
+                publicIP = "127.0.0.1";
+            }
         }
 
         void WriteTitle()
