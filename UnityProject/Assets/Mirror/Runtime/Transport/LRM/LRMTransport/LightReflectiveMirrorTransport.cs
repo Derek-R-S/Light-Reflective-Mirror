@@ -53,7 +53,7 @@ namespace LightReflectiveMirror
             clientToServerTransport.OnClientConnected = OnConnectedToRelay;
             clientToServerTransport.OnClientDataReceived = DataReceived;
             clientToServerTransport.OnClientDisconnected = Disconnected;
-            clientToServerTransport.OnClientError = (e) => { Debug.LogError("LRM | Transport Error: " + e); };
+            clientToServerTransport.OnClientError = (e) => Debug.LogException(e);
         }
 
         void Disconnected()
