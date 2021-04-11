@@ -19,10 +19,13 @@ namespace LightReflectiveMirror
             throw new Exception("LRM | Please switch to .NET 4.x for LRM to function properly!");
 #endif
 
+            if (Application.platform == RuntimePlatform.WebGLPlayer)
+                useNATPunch = false;
+            else
+                _directConnectModule = GetComponent<LRMDirectConnectModule>();
+
             if (clientToServerTransport is LightReflectiveMirrorTransport)
                 throw new Exception("Haha real funny... Use a different transport.");
-
-            _directConnectModule = GetComponent<LRMDirectConnectModule>();
 
             if (_directConnectModule != null)
             {
@@ -71,7 +74,7 @@ namespace LightReflectiveMirror
             {
                 if (!_connectedToRelay)
                 {
-                    Connect(serverIP);
+                    Connect(serverIP, serverPort);
                 }
                 else
                 {
@@ -102,7 +105,6 @@ namespace LightReflectiveMirror
                 throw new Exception("LRM | Client to Server Transport cannot be LRM.");
 
             SetTransportPort(port);
-            
 
             this.serverIP = serverIP;
             serverStatus = "Connecting to relay...";

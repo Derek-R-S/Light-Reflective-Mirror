@@ -11,6 +11,7 @@ namespace LightReflectiveMirror
         // Connection/auth variables
         public Transport clientToServerTransport;
         public string serverIP = null;
+        public ushort serverPort = 7777;
         public ushort endpointServerPort = 8080;
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;

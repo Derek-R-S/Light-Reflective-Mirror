@@ -78,7 +78,7 @@ namespace Mirror
             return maxMessageSize;
         }
 
-        void Awake()
+        public override void Awake()
         {
             Log.level = _logLevels;
 
@@ -216,7 +216,7 @@ namespace Mirror
             return builder.Uri;
         }
 
-        public void Update()
+        public override void Update()
         {
             server?.ProcessMessageQueue();
         }

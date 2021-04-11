@@ -39,7 +39,7 @@ namespace kcp2k
         // log statistics for headless servers that can't show them in GUI
         public bool statisticsLog;
 
-        void Awake()
+        public override void Awake()
         {
 
             KCPConfig conf = new KCPConfig();
@@ -169,7 +169,7 @@ namespace kcp2k
         public override string ServerGetClientAddress(int connectionId) => server.GetClientAddress(connectionId);
         public override void ServerStop() => server.Stop();
 
-        public void Update()
+        public override void Update()
         {
             server.TickIncoming();
             server.TickOutgoing();

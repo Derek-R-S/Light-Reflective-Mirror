@@ -230,6 +230,7 @@ namespace LightReflectiveMirror
                             GUI.enabled = false;
                         }
                         lrm.serverIP = EditorGUILayout.TextField("LRM Node IP", lrm.serverIP);
+                        lrm.serverPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("LRM Node Port", lrm.serverPort), ushort.MinValue, ushort.MaxValue);
                         lrm.endpointServerPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("Endpoint Port", lrm.endpointServerPort), ushort.MinValue, ushort.MaxValue);
 
                         if (lrm.useLoadBalancer)

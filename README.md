@@ -93,6 +93,7 @@ To switch between them you have the following options:
 * Mirror.TelepathyTransport
 * kcp2k.KcpTransport
 * Mirror.SimpleWebTransport
+* MultiCompiled.KcpWebCombined
 
 AuthenticationKey - This is the key the clients need to have on their inspector. It cannot be blank.
 
