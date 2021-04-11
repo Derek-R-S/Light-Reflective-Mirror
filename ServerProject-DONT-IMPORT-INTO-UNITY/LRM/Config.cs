@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LightReflectiveMirror
 {
-    class Config
+    public class Config
     {
         //========================
         // Required Settings

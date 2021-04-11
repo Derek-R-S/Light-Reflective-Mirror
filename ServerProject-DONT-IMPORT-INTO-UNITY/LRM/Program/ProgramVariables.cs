@@ -1,5 +1,4 @@
-﻿using LightReflectiveMirror.Endpoints;
-using Mirror;
+﻿using Mirror;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -8,8 +7,9 @@ using System.Reflection;
 
 namespace LightReflectiveMirror
 {
-    partial class Program
+    public partial class Program
     {
+        public static WebClient webClient = new();
         public static Transport transport;
         public static Program instance;
         public static Config conf;
@@ -22,9 +22,9 @@ namespace LightReflectiveMirror
 
         private DateTime _startupTime;
         public static string publicIP;
-        private List<int> _currentConnections = new List<int>();
-        public Dictionary<int, IPEndPoint> NATConnections = new Dictionary<int, IPEndPoint>();
-        private BiDictionary<int, string> _pendingNATPunches = new BiDictionary<int, string>();
+        private List<int> _currentConnections = new();
+        public Dictionary<int, IPEndPoint> NATConnections = new();
+        private BiDictionary<int, string> _pendingNATPunches = new();
         private int _currentHeartbeatTimer = 0;
 
         private byte[] _NATRequest = new byte[500];

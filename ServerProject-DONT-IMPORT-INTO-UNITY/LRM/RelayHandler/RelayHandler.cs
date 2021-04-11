@@ -99,13 +99,10 @@ namespace LightReflectiveMirror
             else
             {
                 // ping load balancer here
-                using (WebClient wc = new())
-                {
-                    var uri = new Uri($"http://{Program.conf.LoadBalancerAddress}:{Program.conf.LoadBalancerPort}/api/get/id");
-                    string randomID = wc.DownloadString(uri).Replace("\\r", "").Replace("\\n", "").Trim();
+                var uri = new Uri($"http://{Program.conf.LoadBalancerAddress}:{Program.conf.LoadBalancerPort}/api/get/id");
+                string randomID = Program.webClient.DownloadString(uri).Replace("\\r", "").Replace("\\n", "").Trim();
 
-                    return randomID;
-                }
+                return randomID;
             }
         }
 
