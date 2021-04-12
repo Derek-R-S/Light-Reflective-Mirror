@@ -26,6 +26,11 @@ namespace LightReflectiveMirror
             {
                 // Request and wait for the desired page.
                 webRequest.SetRequestHeader("x-Region", ((int)region).ToString());
+                webRequest.SetRequestHeader("Access-Control-Allow-Credentials", "true");
+                webRequest.SetRequestHeader("Access-Control-Allow-Headers", "Accept, X-Access-Token, X-Application-Name, X-Request-Sent-Time");
+                webRequest.SetRequestHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                webRequest.SetRequestHeader("Access-Control-Allow-Origin", "*");
+
                 yield return webRequest.SendWebRequest();
                 var result = webRequest.downloadHandler.text;
 #if UNITY_2020_1_OR_NEWER
@@ -123,6 +128,11 @@ namespace LightReflectiveMirror
 
                 using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
                 {
+                    webRequest.SetRequestHeader("Access-Control-Allow-Credentials", "true");
+                    webRequest.SetRequestHeader("Access-Control-Allow-Headers", "Accept, X-Access-Token, X-Application-Name, X-Request-Sent-Time");
+                    webRequest.SetRequestHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                    webRequest.SetRequestHeader("Access-Control-Allow-Origin", "*");
+
                     // Request and wait for the desired page.
                     yield return webRequest.SendWebRequest();
                     var result = webRequest.downloadHandler.text;
@@ -175,6 +185,10 @@ namespace LightReflectiveMirror
 
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
+                webRequest.SetRequestHeader("Access-Control-Allow-Credentials", "true");
+                webRequest.SetRequestHeader("Access-Control-Allow-Headers", "Accept, X-Access-Token, X-Application-Name, X-Request-Sent-Time");
+                webRequest.SetRequestHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                webRequest.SetRequestHeader("Access-Control-Allow-Origin", "*");
                 webRequest.SetRequestHeader("x-Region", ((int)region).ToString());
                 // Request and wait for the desired page.
                 yield return webRequest.SendWebRequest();
