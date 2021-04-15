@@ -80,10 +80,17 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteString(ref pos, address);
                 _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
 
-                if (GetLocalIp() == null)
+                if (_directConnectModule == null)
+                {
                     _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+                }
                 else
-                    _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+                {
+                    if (GetLocalIp() == null)
+                        _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
+                    else
+                        _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+                }
 
                 _isClient = true;
 

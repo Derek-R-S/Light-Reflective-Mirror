@@ -263,7 +263,7 @@ namespace LightReflectiveMirror
                         break;
                     case OpCodes.RequestNATConnection:
                         // Called when the LRM node would like us to establish a NAT puncher connection. Its safe to ignore if NAT punch is disabled.
-                        if (GetLocalIp() != null && _directConnectModule != null && useNATPunch)
+                        if (useNATPunch && GetLocalIp() != null && _directConnectModule != null)
                         {
                             byte[] initalData = new byte[150];
                             int sendPos = 0;

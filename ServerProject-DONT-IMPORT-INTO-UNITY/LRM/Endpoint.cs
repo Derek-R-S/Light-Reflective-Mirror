@@ -68,12 +68,27 @@ namespace LightReflectiveMirror.Endpoints
         [RestRoute("Get", "/api/compressed/servers")]
         public async Task ServerListCompressed(IHttpContext context)
         {
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+
             if (Program.conf.EndpointServerList)
             {
                 await context.Response.SendResponseAsync(_cachedCompressedServerList);
             }
             else
                 await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
+        }
+
+        [RestRoute("Options", "/api/compressed/servers")]
+        public async Task ServerListCompressedOptions(IHttpContext context)
+        {
+            var originHeaders = context.Request.Headers["Access-Control-Request-Headers"];
+
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            context.Response.Headers.Add("Access-Control-Allow-Headers", originHeaders);
+
+            await context.Response.SendResponseAsync(HttpStatusCode.Ok);
         }
     }
 

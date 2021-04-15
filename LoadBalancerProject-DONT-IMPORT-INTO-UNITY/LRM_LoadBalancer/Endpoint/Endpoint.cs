@@ -38,7 +38,7 @@ namespace LightReflectiveMirror.LoadBalancing
             Logger.WriteLogMessage("Received auth req [" + receivedAuthKey + "] == [" + Program.conf.AuthKey + "]", ConsoleColor.Cyan);
 
             // if server is authenticated
-            if (receivedAuthKey != null && region != null && int.TryParse(region, out int regionId) && 
+            if (receivedAuthKey != null && region != null && int.TryParse(region, out int regionId) &&
                 address != null && endpointPort != null && gamePort != null && receivedAuthKey == Program.conf.AuthKey)
             {
                 Logger.WriteLogMessage($"Server accepted: {address}:{gamePort}");
@@ -143,6 +143,18 @@ namespace LightReflectiveMirror.LoadBalancing
             await context.Response.SendResponseAsync(low.Key.address != "Dummy" ? JsonConvert.SerializeObject(low.Key) : HttpStatusCode.InternalServerError);
         }
 
+        [RestRoute("Options", "/api/join/")]
+        public async Task JoinRelayOptions(IHttpContext context)
+        {
+            var originHeaders = context.Request.Headers["Access-Control-Request-Headers"];
+
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            context.Response.Headers.Add("Access-Control-Allow-Headers", originHeaders);
+
+            await context.Response.SendResponseAsync(HttpStatusCode.Ok);
+        }
+
         /// <summary>
         /// Returns all the servers on all the relay nodes.
         /// </summary>
@@ -153,7 +165,7 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             string region = context.Request.Headers["x-Region"];
 
-            if(int.TryParse(region, out int regionID))
+            if (int.TryParse(region, out int regionID))
             {
                 await context.Response.SendResponseAsync(_cachedRegionRooms[(LRMRegions)regionID]);
                 return;
@@ -161,6 +173,18 @@ namespace LightReflectiveMirror.LoadBalancing
 
             // They didnt submit a region header, just give them all servers as they probably are viewing in browser.
             await context.Response.SendResponseAsync(_cachedRegionRooms[LRMRegions.Any]);
+        }
+
+        [RestRoute("Options", "/api/masterlist/")]
+        public async Task GetMasterServerListOptions(IHttpContext context)
+        {
+            var originHeaders = context.Request.Headers["Access-Control-Request-Headers"];
+
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+            context.Response.Headers.Add("Access-Control-Allow-Headers", originHeaders);
+
+            await context.Response.SendResponseAsync(HttpStatusCode.Ok);
         }
 
         /// <summary>
@@ -228,7 +252,7 @@ namespace LightReflectiveMirror.LoadBalancing
             }
         }
 
-        
+
         #endregion
 
     }
