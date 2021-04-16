@@ -194,11 +194,11 @@ namespace LightReflectiveMirror
                 // They have completed the "setup guide" Show them the main UI
 
                 // Remove unused transports...
-                foreach(var transport in lrm.GetComponentsInChildren<Transport>())
+                foreach (var transport in lrm.GetComponentsInChildren<Transport>())
                 {
-                    if(!(transport is LightReflectiveMirrorTransport))
+                    if (!(transport is LightReflectiveMirrorTransport))
                     {
-                        if(transport != lrm.clientToServerTransport && (directModule == null ? true : directModule.directConnectTransport != transport))
+                        if (transport != lrm.clientToServerTransport && (directModule == null ? true : directModule.directConnectTransport != transport))
                         {
                             if (transport.gameObject == lrm.gameObject)
                                 DestroyImmediate(transport);
@@ -223,25 +223,34 @@ namespace LightReflectiveMirror
                 switch (currentTab)
                 {
                     case 0:
-                        // They are in the LRM Settings tab.
-                        if (lrm.useLoadBalancer)
+                        using (var change = new EditorGUI.ChangeCheckScope())
                         {
-                            EditorGUILayout.HelpBox("While using a Load Balancer, you don't set the LRM node IP or port.", MessageType.Info);
-                            GUI.enabled = false;
-                        }
-                        lrm.serverIP = EditorGUILayout.TextField("LRM Node IP", lrm.serverIP);
-                        lrm.serverPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("LRM Node Port", lrm.serverPort), ushort.MinValue, ushort.MaxValue);
-                        lrm.endpointServerPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("Endpoint Port", lrm.endpointServerPort), ushort.MinValue, ushort.MaxValue);
 
-                        if (lrm.useLoadBalancer)
-                        {
-                            GUI.enabled = true;
-                        }
 
-                        lrm.authenticationKey = EditorGUILayout.TextField("LRM Auth Key", lrm.authenticationKey);
-                        lrm.heartBeatInterval = EditorGUILayout.Slider("Heartbeat Time", lrm.heartBeatInterval, 0.1f, 5f);
-                        lrm.connectOnAwake = EditorGUILayout.Toggle("Connect on Awake", lrm.connectOnAwake);
-                        lrm.clientToServerTransport = (Transport)EditorGUILayout.ObjectField("LRM Transport", lrm.clientToServerTransport, typeof(Transport), true);
+                            // They are in the LRM Settings tab.
+                            if (lrm.useLoadBalancer)
+                            {
+                                EditorGUILayout.HelpBox("While using a Load Balancer, you don't set the LRM node IP or port.", MessageType.Info);
+                                GUI.enabled = false;
+                            }
+                            lrm.serverIP = EditorGUILayout.TextField("LRM Node IP", lrm.serverIP);
+                            lrm.serverPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("LRM Node Port", lrm.serverPort), ushort.MinValue, ushort.MaxValue);
+                            lrm.endpointServerPort = (ushort)Mathf.Clamp(EditorGUILayout.IntField("Endpoint Port", lrm.endpointServerPort), ushort.MinValue, ushort.MaxValue);
+
+                            if (lrm.useLoadBalancer)
+                            {
+                                GUI.enabled = true;
+                            }
+
+                            lrm.authenticationKey = EditorGUILayout.TextField("LRM Auth Key", lrm.authenticationKey);
+                            lrm.heartBeatInterval = EditorGUILayout.Slider("Heartbeat Time", lrm.heartBeatInterval, 0.1f, 5f);
+                            lrm.connectOnAwake = EditorGUILayout.Toggle("Connect on Awake", lrm.connectOnAwake);
+                            lrm.clientToServerTransport = (Transport)EditorGUILayout.ObjectField("LRM Transport", lrm.clientToServerTransport, typeof(Transport), true);
+                            if (change.changed)
+                            {
+                                EditorUtility.SetDirty(lrm);
+                            }
+                        }
                         break;
                     case 1:
                         // NAT punch tab.
