@@ -125,7 +125,7 @@ Pull docker image: `docker pull derekrs/lrm_node:Bleeding-Edge`
 
 Run docker for config: `docker run -it --rm -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
 
-Run docker headless: `docker run -d -it --rm -p 8080:8080 -p 7777:7777/udp -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
+Run docker headless: `docker run -d -it --rm -p 8080:8080 -p 7777:7777/udp -p 7776:7776/udp -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
 
 ## Credits
 
