@@ -23,11 +23,9 @@ namespace LightReflectiveMirror
 
             WriteLogMessage("\nInvoking Transport Methods...");
 
-            if (_awakeMethod != null)
-                _awakeMethod.Invoke(transport, null);
+            _awakeMethod?.Invoke();
 
-            if (_startMethod != null)
-                _startMethod.Invoke(transport, null);
+            _startMethod?.Invoke();
 
             WriteLogMessage("\nStarting Transport... ", ConsoleColor.White, true);
 
@@ -141,10 +139,20 @@ namespace LightReflectiveMirror
 
         void CheckMethods(Type type)
         {
-            _awakeMethod = type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            _startMethod = type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            _updateMethod = type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            _lateUpdateMethod = type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _awakeMethod = CreateTransportDelegate(type.GetMethod("Awake", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+            _startMethod = CreateTransportDelegate(type.GetMethod("Start", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+            _updateMethod = CreateTransportDelegate(type.GetMethod("Update", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+            _lateUpdateMethod = CreateTransportDelegate(type.GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+        }
+        delegate void TransportMethodDelegate();
+        TransportMethodDelegate CreateTransportDelegate(MethodInfo mi)
+        {
+            if (mi == null)
+            {
+                return null;
+            }
+            var openDelegate = Delegate.CreateDelegate(typeof(TransportMethodDelegate), transport, mi, true);
+            return openDelegate as TransportMethodDelegate;
         }
     }
 }

@@ -85,8 +85,8 @@ namespace LightReflectiveMirror
             {
                 try
                 {
-                    if (_updateMethod != null) _updateMethod.Invoke(transport, null);
-                    if (_lateUpdateMethod != null) _lateUpdateMethod.Invoke(transport, null);
+                    _updateMethod?.Invoke();
+                    _lateUpdateMethod?.Invoke();
                 }
                 catch (Exception e)
                 {

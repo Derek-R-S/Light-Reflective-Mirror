@@ -15,10 +15,10 @@ namespace LightReflectiveMirror
         public static Config conf;
         
         private RelayHandler _relay;
-        private MethodInfo _awakeMethod;
-        private MethodInfo _startMethod;
-        private MethodInfo _updateMethod;
-        private MethodInfo _lateUpdateMethod;
+        private TransportMethodDelegate _awakeMethod;
+        private TransportMethodDelegate _startMethod;
+        private TransportMethodDelegate _updateMethod;
+        private TransportMethodDelegate _lateUpdateMethod;
 
         private DateTime _startupTime;
         public static string publicIP;
