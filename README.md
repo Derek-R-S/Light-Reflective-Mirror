@@ -119,6 +119,14 @@ Epic is a newer transport that offers NAT Punchthrough, and a relay service for 
 ### LRM
 LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available for all platforms (PC, Mac, Linux, WebGL, Android, IOS, You name it!). It does this by supporting any of mirrors existing transports. If you want webgl? Use websockets! Want TCP? Telepathy! UDP? KCP! This is one of LRM's main features. The game developer can decide on how they want their data sent between the server and clients. With LRM, you are going to have to host the servers yourself. We are releasing a load balancer soon which will make it super easy to expand servers in regions and balance users out between them. The more powerful of a server you have, the more that LRM node can host. With some tests (All clients relayed, none NAT punched), we could get about ~200 CCU on a $5 google cloud server (f1-micro). Though, LRM is still constantly being worked on and could have changes, rewrites, etc at any time. You are able to contribute if you find any bugs, just by opening a PR! So, if you are more of a self-hosting person, who wants full control of your servers, or want a relay for a platform the others don't support (WebGL). Use LRM, if you have any questions, we are in the discord channel everyday! :)
 
+### Video Tutorial Commands
+
+Pull docker image: `docker pull derekrs/lrm_node:Bleeding-Edge`
+
+Run docker for config: `docker run -it --rm -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
+
+Run docker headless: `docker run -d -it --rm -p 8080:8080 -p 7777:7777/udp -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
+
 ## Credits
 
 Cooper - Assisted with development and made some wonderful features! He's also active in the discord to help answer questions and help with issues.
