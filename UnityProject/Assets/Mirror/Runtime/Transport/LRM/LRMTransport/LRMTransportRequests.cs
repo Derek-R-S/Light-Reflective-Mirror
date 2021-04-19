@@ -1,5 +1,4 @@
 ﻿using Mirror;
-using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +8,7 @@ namespace LightReflectiveMirror
 {
     public partial class LightReflectiveMirrorTransport : Transport
     {
+        public static System.Func<string, System.Type, object> OnDeserializeJson;
 
         public void RequestServerList(LRMRegions searchRegion = LRMRegions.Any)
         {
@@ -43,7 +43,7 @@ namespace LightReflectiveMirror
                         break;
 
                     case UnityWebRequest.Result.Success:
-                        var parsedAddress = JsonConvert.DeserializeObject<RelayAddress>(result);
+                        var parsedAddress = (RelayAddress)OnDeserializeJson.Invoke(result, typeof(RelayAddress));
                         Connect(parsedAddress.Address, parsedAddress.Port);
                         endpointServerPort = parsedAddress.EndpointPort;
                         break;
@@ -56,7 +56,7 @@ namespace LightReflectiveMirror
                 else
                 {
                     // join here
-                    var parsedAddress = JsonConvert.DeserializeObject<RelayAddress>(result);
+                    var parsedAddress = (RelayAddress)OnDeserializeJson.Invoke(result,typeof(RelayAddress));
                     Connect(parsedAddress.Address, parsedAddress.Port);
                     endpointServerPort = parsedAddress.EndpointPort;
                 }
@@ -148,7 +148,7 @@ namespace LightReflectiveMirror
 
                         case UnityWebRequest.Result.Success:
                             relayServerList?.Clear();
-                            relayServerList = JsonConvert.DeserializeObject<List<Room>>(result.Decompress());
+                            relayServerList = (List<Room>)OnDeserializeJson.Invoke(result.Decompress(), typeof(List<Room>));
                             serverListUpdated?.Invoke();
                             break;
                     }
@@ -160,7 +160,7 @@ namespace LightReflectiveMirror
                     else
                     {
                         relayServerList?.Clear();
-                        relayServerList = JsonConvert.DeserializeObject<List<Room>>(result.Decompress());
+                        relayServerList = (List<Room>)OnDeserializeJson.Invoke(result.Decompress(), typeof(List<Room>));
                         serverListUpdated?.Invoke();
                     }
 #endif
@@ -201,7 +201,7 @@ namespace LightReflectiveMirror
 
                     case UnityWebRequest.Result.Success:
                         relayServerList?.Clear();
-                        relayServerList = JsonConvert.DeserializeObject<List<Room>>(result);
+                        relayServerList = (List<Room>)OnDeserializeJson.Invoke(result, typeof(List<Room>));
                         serverListUpdated?.Invoke();
                         _serverListUpdated = true;
                         break;
@@ -214,7 +214,7 @@ namespace LightReflectiveMirror
                 else
                 {
                     relayServerList?.Clear();
-                    relayServerList = JsonConvert.DeserializeObject<List<Room>>(result);
+                    relayServerList = (List<Room>)OnDeserializeJson.Invoke(result, typeof(List<Room>));
                     serverListUpdated?.Invoke();
                     _serverListUpdated = true;
                 }

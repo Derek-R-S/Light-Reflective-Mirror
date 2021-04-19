@@ -41,7 +41,24 @@ namespace LightReflectiveMirror
             if (connectOnAwake)
                 ConnectToRelay();
 
+            RegisterDefaultJsonDeserializer();
+
             InvokeRepeating(nameof(SendHeartbeat), heartBeatInterval, heartBeatInterval);
+        }
+
+        void RegisterDefaultJsonDeserializer()
+        {
+            LightReflectiveMirror.LightReflectiveMirrorTransport.OnDeserializeJson = (result, type) =>
+            {
+                // Since JsonUtility didn't support json with array as root, make a wrapper.
+                if (type == typeof(List<Room>))
+                {
+                    result = "{ \"rooms\":" + result + "}";
+                    var r = JsonUtility.FromJson<RoomWrapper>(result);
+                    return r.rooms;
+                }
+                return JsonUtility.FromJson(result, type);
+            };
         }
 
         private void SetupCallbacks()
@@ -426,6 +443,13 @@ namespace LightReflectiveMirror
 
             return null;
         }
+    }
+
+
+    [Serializable]
+    public struct RoomWrapper
+    {
+        public List<Room> rooms;
     }
 
     [Serializable]
