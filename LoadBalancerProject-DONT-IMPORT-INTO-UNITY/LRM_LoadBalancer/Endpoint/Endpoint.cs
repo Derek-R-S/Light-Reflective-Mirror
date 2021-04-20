@@ -91,7 +91,10 @@ namespace LightReflectiveMirror.LoadBalancing
                 }
 
                 CacheAllServers();
+                await context.Response.SendResponseAsync(HttpStatusCode.Ok);
             }
+            else
+                await context.Response.SendResponseAsync(HttpStatusCode.Forbidden);
         }
 
         /// <summary>
