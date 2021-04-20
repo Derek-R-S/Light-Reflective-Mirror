@@ -192,7 +192,14 @@ namespace LightReflectiveMirror.LoadBalancing
 
                 for (int i = 0; i < keys.Count; i++)
                 {
-                    if(!await HealthCheckNode(keys[i].endpointAddress, keys[i].endpointPort))
+
+                    var stats = await RequestStatsFromNode(keys[i].endpointAddress, keys[i].endpointPort);
+
+                    if (stats.HasValue)
+                    {
+                        availableRelayServers[keys[i]] = stats.Value;
+                    }
+                    else
                     {
                         Logger.ForceLogMessage($"Server {keys[i].address}:{keys[i].port} failed a health check, removing from load balancer.", ConsoleColor.Red);
                         availableRelayServers.Remove(keys[i]);
