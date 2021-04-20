@@ -124,8 +124,10 @@ namespace LightReflectiveMirror
         {
             try
             {
-                webClient.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
-                await webClient.DownloadStringTaskAsync($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/roomsupdated");
+				using(WebClient wc = new WebClient()){
+					wc.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
+					await wc.DownloadStringTaskAsync($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/roomsupdated");
+				}
             }
             catch { } // LLB might be down, ignore.
         }
