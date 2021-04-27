@@ -156,4 +156,43 @@ namespace LightReflectiveMirror
             }
         }
     }
+
+    internal static class JsonUtilityHelper
+    {
+        public static bool IsJsonArray(string json)
+        {
+            return json.StartsWith("[") && json.EndsWith("]");
+        }
+
+        public static T[] FromJson<T>(string json)
+        {
+            if (!IsJsonArray(json))
+            {
+                throw new System.FormatException("The input json string is not a Json Array");
+            }
+            json = "{\"Items\":" + json + "}";
+            JsonWrapper<T> wrapper = JsonUtility.FromJson<JsonWrapper<T>>(json);
+            return wrapper.Items;
+        }
+
+        public static string ToJson<T>(T[] array)
+        {
+            JsonWrapper<T> wrapper = new JsonWrapper<T>();
+            wrapper.Items = array;
+            return JsonUtility.ToJson(wrapper);
+        }
+
+        public static string ToJson<T>(T[] array, bool prettyPrint)
+        {
+            JsonWrapper<T> wrapper = new JsonWrapper<T>();
+            wrapper.Items = array;
+            return JsonUtility.ToJson(wrapper, prettyPrint);
+        }
+
+        [Serializable]
+        private class JsonWrapper<T>
+        {
+            public T[] Items;
+        }
+    }
 }
