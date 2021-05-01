@@ -113,7 +113,7 @@ namespace LightReflectiveMirror
             clientToServerTransport.ClientConnect(serverIP);
         }
 
-        private void DisconnectFromRelay()
+        public void DisconnectFromRelay()
         {
             if (IsAuthenticated())
             {
