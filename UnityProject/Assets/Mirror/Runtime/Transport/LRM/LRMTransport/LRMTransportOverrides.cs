@@ -107,10 +107,13 @@ namespace LightReflectiveMirror
         {
             _isClient = false;
 
-            int pos = 0;
-            _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.LeaveRoom);
-
-            clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+            // make sure we are even connected to a relay
+            if (Available())
+            {
+                int pos = 0;
+                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.LeaveRoom);
+                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
+            }
 
             if (_directConnectModule != null)
                 _directConnectModule.ClientDisconnect();
