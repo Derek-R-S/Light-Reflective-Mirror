@@ -288,9 +288,8 @@ namespace LightReflectiveMirror
                                 }
                             }
 
-                            IPAddress serverAddr;
 
-                            if (!IPAddress.TryParse(serverIP, out serverAddr))
+                            if (!IPAddress.TryParse(serverIP, out IPAddress serverAddr))
                                 serverAddr = Dns.GetHostEntry(serverIP).AddressList[0];
 
                             _relayPuncherIP = new IPEndPoint(serverAddr, NATPunchtroughPort);
@@ -437,13 +436,13 @@ namespace LightReflectiveMirror
         public string serverData;
         public int hostId;
         public List<int> clients;
-
+        public int currentPlayers;
         public RelayAddress relayInfo;
 
         /// <summary>
         /// This variable is only available on the client
         /// </summary>
-        public int currentPlayers { get => clients.Count + 1; }
+        //public int currentPlayers { get => clients.Count + 1; }
     }
 
     [Serializable]

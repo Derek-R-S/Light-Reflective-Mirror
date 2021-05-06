@@ -14,6 +14,9 @@ namespace LightReflectiveMirror
         public string serverData;
         public bool isPublic;
         public int maxPlayers;
+        public int currentPlayers { get => clients.Count + 1; } // player count
+
+        [JsonIgnore]
         public List<int> clients;
 
         public RelayAddress relayInfo;

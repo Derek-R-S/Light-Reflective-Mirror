@@ -119,7 +119,7 @@ namespace LightReflectiveMirror
                 serverId = GetRandomServerID(),
                 hostIP = hostIP,
                 hostLocalIP = hostLocalIP,
-                supportsDirectConnect = hostIP == null ? false : useDirectConnect,
+                supportsDirectConnect = hostIP != null && useDirectConnect,
                 port = port,
                 useNATPunch = useNatPunch
             };
