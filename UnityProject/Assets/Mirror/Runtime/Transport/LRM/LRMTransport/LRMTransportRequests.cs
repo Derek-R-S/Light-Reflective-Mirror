@@ -33,6 +33,9 @@ namespace LightReflectiveMirror
 
                 yield return webRequest.SendWebRequest();
                 var result = webRequest.downloadHandler.text;
+
+                print("RECIEVED INFO: " + result);
+
 #if UNITY_2020_1_OR_NEWER
                 switch (webRequest.result)
                 {
@@ -55,9 +58,9 @@ namespace LightReflectiveMirror
                 else
                 {
                     // join here
-                    var parsedAddress = JsonUtility.FromJson<RelayAddress>(result.Decompress());
-                    Connect(parsedAddress.Address, parsedAddress.Port);
-                    endpointServerPort = parsedAddress.EndpointPort;
+                    var parsedAddress = JsonUtility.FromJson<RelayAddress>(result);
+                    Connect(parsedAddress.address, parsedAddress.port);
+                    endpointServerPort = parsedAddress.endpointPort;
                 }
 #endif
             }
@@ -97,8 +100,8 @@ namespace LightReflectiveMirror
             while (IsAuthenticated())
                 yield return new WaitForEndOfFrame();
 
-            endpointServerPort = room.relayInfo.EndpointPort;
-            Connect(room.relayInfo.Address, room.relayInfo.Port);
+            endpointServerPort = room.relayInfo.endpointPort;
+            Connect(room.relayInfo.address, room.relayInfo.port);
 
             while (!IsAuthenticated())
                 yield return new WaitForEndOfFrame();

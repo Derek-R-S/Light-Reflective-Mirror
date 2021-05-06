@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Mirror;
-using Newtonsoft.Json;
 using LightReflectiveMirror;
 
 public class LRMTester : MonoBehaviour
@@ -40,9 +39,11 @@ public class LRMTester : MonoBehaviour
 
         for(int i = 0; i < _LRM.relayServerList.Count; i++)
         {
+            print(_LRM.relayServerList[i].relayInfo.address + " ADDRESS");
+
             var serverEntry = Instantiate(serverListEntry, serverListParent);
 
-            serverEntry.transform.GetChild(0).GetComponent<Text>().text = $"{_LRM.relayServerList[i].serverName + " - " + JsonConvert.SerializeObject(_LRM.relayServerList[i].relayInfo)}";
+            serverEntry.transform.GetChild(0).GetComponent<Text>().text = $"{_LRM.relayServerList[i].serverName + " - " + JsonUtility.ToJson(_LRM.relayServerList[i].relayInfo)}";
             string serverID = _LRM.relayServerList[i].serverId;
             serverEntry.GetComponent<Button>().onClick.AddListener(() => { NetworkManager.singleton.networkAddress = serverID.ToString(); NetworkManager.singleton.StartClient(); });
         }

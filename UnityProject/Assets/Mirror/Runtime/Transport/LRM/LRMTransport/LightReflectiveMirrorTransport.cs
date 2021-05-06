@@ -131,8 +131,16 @@ namespace LightReflectiveMirror
                 clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
 
                 // If NAT Puncher is initialized, send heartbeat on that as well.
-                if (_NATPuncher != null)
-                    _NATPuncher.Send(new byte[] { 0 }, 1, _relayPuncherIP);
+
+                try
+                {
+                    if (_NATPuncher != null)
+                        _NATPuncher.Send(new byte[] { 0 }, 1, _relayPuncherIP);
+                }
+                catch (Exception e)
+                {
+                    print(e);
+                }
 
                 // Check if any server-side proxies havent been used in 10 seconds, and timeout if so.
                 var keys = new List<IPEndPoint>(_serverProxies.GetAllKeys());
@@ -438,19 +446,15 @@ namespace LightReflectiveMirror
         public List<int> clients;
         public int currentPlayers;
         public RelayAddress relayInfo;
-
-        /// <summary>
-        /// This variable is only available on the client
-        /// </summary>
-        //public int currentPlayers { get => clients.Count + 1; }
     }
 
     [Serializable]
     public struct RelayAddress
     {
-        public ushort Port;
-        public ushort EndpointPort;
-        public string Address;
+        public ushort port;
+        public ushort endpointPort;
+        public string address;
+        public LRMRegions serverRegion;
     }
 
 }

@@ -40,6 +40,7 @@ namespace LightReflectiveMirror.LoadBalancing
     }
 
     [Serializable]
+    [JsonObject(MemberSerialization.OptOut)]
     public struct Room
     {
         public string serverId;
@@ -47,7 +48,10 @@ namespace LightReflectiveMirror.LoadBalancing
         public string serverName;
         public string serverData;
         public bool isPublic;
+        public int currentPlayers { get => clients.Count + 1; }
         public int maxPlayers;
+
+        [JsonIgnore]
         public List<int> clients;
 
         public RelayAddress relayInfo;
