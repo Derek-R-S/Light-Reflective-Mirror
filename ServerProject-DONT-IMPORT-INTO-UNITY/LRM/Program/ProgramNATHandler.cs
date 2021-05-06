@@ -14,7 +14,7 @@ namespace LightReflectiveMirror
             var serverResponse = new byte[1] { 1 };
 
             byte[] readData;
-            bool isConnectionEstablishment;
+            bool isConnectionEstablished;
             int pos;
             string connectionID;
 
@@ -24,9 +24,9 @@ namespace LightReflectiveMirror
                 pos = 0;
                 try
                 {
-                    isConnectionEstablishment = readData.ReadBool(ref pos);
+                    isConnectionEstablished = readData.ReadBool(ref pos);
 
-                    if (isConnectionEstablishment)
+                    if (isConnectionEstablished)
                     {
                         connectionID = readData.ReadString(ref pos);
 

@@ -29,7 +29,7 @@ namespace LightReflectiveMirror.Endpoints
 
         private static List<Room> _rooms { get => Program.instance.GetRooms().Where(x => x.isPublic).ToList(); }
 
-        private RelayStats _stats { get => new RelayStats 
+        private RelayStats _stats { get => new()
         {
             ConnectedClients = Program.instance.GetConnections(),
             RoomCount = Program.instance.GetRooms().Count,
@@ -43,7 +43,7 @@ namespace LightReflectiveMirror.Endpoints
             _cachedCompressedServerList = _cachedServerList.Compress();
 
             if (Program.conf.UseLoadBalancer)
-                Program.instance.UpdateLoadbalancerServers();
+                Program.instance.UpdateLoadBalancerServers();
         }
 
         [RestRoute("Get", "/api/stats")]

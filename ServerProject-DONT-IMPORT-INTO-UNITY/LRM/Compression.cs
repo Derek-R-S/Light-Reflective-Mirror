@@ -35,11 +35,11 @@ namespace LightReflectiveMirror.Compression
         /// <summary>
         /// Decompresses the string.
         /// </summary>
-        /// <param name="compressedText">The compressed text.</param>
+        /// <param name="text">The compressed text.</param>
         /// <returns></returns>
-        public static string Decompress(this string compressedText)
+        public static string Decompress(this string text)
         {
-            byte[] gZipBuffer = Convert.FromBase64String(compressedText);
+            byte[] gZipBuffer = Convert.FromBase64String(text);
             using (var memoryStream = new MemoryStream())
             {
                 int dataLength = BitConverter.ToInt32(gZipBuffer, 0);

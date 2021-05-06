@@ -120,11 +120,12 @@ namespace LightReflectiveMirror
             }
         }
 
-        public async void UpdateLoadbalancerServers()
+        public async void UpdateLoadBalancerServers()
         {
             try
             {
-				using(WebClient wc = new WebClient()){
+				using(WebClient wc = new())
+                {
 					wc.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
 					await wc.DownloadStringTaskAsync($"http://{conf.LoadBalancerAddress}:{conf.LoadBalancerPort}/api/roomsupdated");
 				}
@@ -146,11 +147,7 @@ namespace LightReflectiveMirror
                 string gamePort = conf.TransportPort.ToString();
                 HttpWebRequest authReq = (HttpWebRequest)WebRequest.Create(uri);
 
-                authReq.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
-                authReq.Headers.Add("x-EndpointPort", endpointPort);
-                authReq.Headers.Add("x-GamePort", gamePort);
-                authReq.Headers.Add("x-PIP", publicIP); // Public IP
-                authReq.Headers.Add("x-Region", ((int)conf.LoadBalancerRegion).ToString());
+                ConfigureHeaders(endpointPort, gamePort, authReq);
 
                 var res = await authReq.GetResponseAsync();
 
@@ -162,6 +159,15 @@ namespace LightReflectiveMirror
                 WriteLogMessage("Error registering - Load Balancer probably timed out.", ConsoleColor.Red);
                 return false;
             }
+        }
+
+        private static void ConfigureHeaders(string endpointPort, string gamePort, HttpWebRequest authReq)
+        {
+            authReq.Headers.Add("Authorization", conf.LoadBalancerAuthKey);
+            authReq.Headers.Add("x-EndpointPort", endpointPort);
+            authReq.Headers.Add("x-GamePort", gamePort);
+            authReq.Headers.Add("x-PIP", publicIP); // Public IP
+            authReq.Headers.Add("x-Region", ((int)conf.LoadBalancerRegion).ToString());
         }
     }
 }

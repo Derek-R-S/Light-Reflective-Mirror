@@ -7,6 +7,55 @@ namespace LightReflectiveMirror
 {
     public partial class RelayHandler
     {
+        /// <summary>
+        /// Creates a room on the LRM node.
+        /// </summary>
+        /// <param name="clientId">The client requesting to create a room</param>
+        /// <param name="maxPlayers">The maximum amount of players for this room</param>
+        /// <param name="serverName">The name for the server</param>
+        /// <param name="isPublic">Weather or not the server should show up on the server list</param>
+        /// <param name="serverData">Extra data the host can include</param>
+        /// <param name="useDirectConnect">Weather or not, the host is capable of doing direct connections</param>
+        /// <param name="hostLocalIP">The hosts local IP</param>
+        /// <param name="useNatPunch">Weather or not, the host is supporting NAT Punch</param>
+        /// <param name="port">The port of the direct connect transport on the host</param>
+        private void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port)
+        {
+            LeaveRoom(clientId);
+            Program.instance.NATConnections.TryGetValue(clientId, out IPEndPoint hostIP);
+
+            Room room = new()
+            {
+                hostId = clientId,
+                maxPlayers = maxPlayers,
+                serverName = serverName,
+                isPublic = isPublic,
+                serverData = serverData,
+                clients = new List<int>(),
+                serverId = GetRandomServerID(),
+                hostIP = hostIP,
+                hostLocalIP = hostLocalIP,
+                supportsDirectConnect = hostIP != null && useDirectConnect,
+                port = port,
+                useNATPunch = useNatPunch,
+                relayInfo = new RelayAddress { address = Program.publicIP, port = Program.conf.TransportPort, endpointPort = Program.conf.EndpointPort }
+            };
+
+            rooms.Add(room);
+            _cachedClientRooms.Add(clientId, room);
+            _cachedRooms.Add(room.serverId, room);
+
+            int pos = 0;
+            byte[] sendBuffer = _sendBuffers.Rent(5);
+
+            sendBuffer.WriteByte(ref pos, (byte)OpCodes.RoomCreated);
+            sendBuffer.WriteString(ref pos, room.serverId);
+
+            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+            _sendBuffers.Return(sendBuffer);
+
+            Endpoint.RoomsModified();
+        }
 
         /// <summary>
         /// Attempts to join a room for a client.
@@ -15,7 +64,7 @@ namespace LightReflectiveMirror
         /// <param name="serverId">The server ID of the room</param>
         /// <param name="canDirectConnect">If the client is capable of a direct connection</param>
         /// <param name="localIP">The local IP of the client joining</param>
-        void JoinRoom(int clientId, string serverId, bool canDirectConnect, string localIP)
+        private void JoinRoom(int clientId, string serverId, bool canDirectConnect, string localIP)
         {
             LeaveRoom(clientId);
 
@@ -64,7 +113,6 @@ namespace LightReflectiveMirror
                     }
                     else
                     {
-
                         sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.ServerJoined);
                         sendJoinBuffer.WriteInt(ref sendJoinPos, clientId);
 
@@ -89,63 +137,11 @@ namespace LightReflectiveMirror
         }
 
         /// <summary>
-        /// Creates a room on the LRM node.
-        /// </summary>
-        /// <param name="clientId">The client requesting to create a room</param>
-        /// <param name="maxPlayers">The maximum amount of players for this room</param>
-        /// <param name="serverName">The name for the server</param>
-        /// <param name="isPublic">Weather or not the server should show up on the server list</param>
-        /// <param name="serverData">Extra data the host can include</param>
-        /// <param name="useDirectConnect">Weather or not, the host is capable of doing direct connections</param>
-        /// <param name="hostLocalIP">The hosts local IP</param>
-        /// <param name="useNatPunch">Weather or not, the host is supporting NAT Punch</param>
-        /// <param name="port">The port of the direct connect transport on the host</param>
-        void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port)
-        {
-            LeaveRoom(clientId);
-            Program.instance.NATConnections.TryGetValue(clientId, out IPEndPoint hostIP);
-
-            Room room = new Room
-            {
-                hostId = clientId,
-                maxPlayers = maxPlayers,
-                serverName = serverName,
-                isPublic = isPublic,
-                serverData = serverData,
-                clients = new List<int>(),
-
-                relayInfo = new RelayAddress { address = Program.publicIP, port = Program.conf.TransportPort, endpointPort = Program.conf.EndpointPort },
-
-                serverId = GetRandomServerID(),
-                hostIP = hostIP,
-                hostLocalIP = hostLocalIP,
-                supportsDirectConnect = hostIP != null && useDirectConnect,
-                port = port,
-                useNATPunch = useNatPunch
-            };
-
-            rooms.Add(room);
-            _cachedClientRooms.Add(clientId, room);
-            _cachedRooms.Add(room.serverId, room);
-
-            int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent(5);
-
-            sendBuffer.WriteByte(ref pos, (byte)OpCodes.RoomCreated);
-            sendBuffer.WriteString(ref pos, room.serverId);
-
-            Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
-            _sendBuffers.Return(sendBuffer);
-
-            Endpoint.RoomsModified();
-        }
-
-        /// <summary>
         /// Makes the client leave their room.
         /// </summary>
         /// <param name="clientId">The client of which to remove from their room</param>
         /// <param name="requiredHostId">The ID of the client who kicked the client. -1 if the client left on their own terms</param>
-        void LeaveRoom(int clientId, int requiredHostId = -1)
+        private void LeaveRoom(int clientId, int requiredHostId = -1)
         {
             for (int i = 0; i < rooms.Count; i++)
             {
