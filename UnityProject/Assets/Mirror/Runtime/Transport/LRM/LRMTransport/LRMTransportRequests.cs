@@ -33,9 +33,7 @@ namespace LightReflectiveMirror
 
                 yield return webRequest.SendWebRequest();
                 var result = webRequest.downloadHandler.text;
-
-                print("RECIEVED INFO: " + result);
-
+                
 #if UNITY_2020_1_OR_NEWER
                 switch (webRequest.result)
                 {
