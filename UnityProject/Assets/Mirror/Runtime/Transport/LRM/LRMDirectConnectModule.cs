@@ -60,8 +60,6 @@ public class LRMDirectConnectModule : MonoBehaviour
         if (SupportsNATPunch())
             SetTransportPort(port);
 
-
-
         directConnectTransport.ClientConnect(ip);
     }
 
@@ -90,11 +88,11 @@ public class LRMDirectConnectModule : MonoBehaviour
         return directConnectTransport is kcp2k.KcpTransport;
     }
 
-    public bool KickClient(int clientID)
+    public void KickClient(int clientID)
     {
         if (showDebugLogs)
             Debug.Log("Kicked direct connect client.");
-        return directConnectTransport.ServerDisconnect(clientID);
+        directConnectTransport.ServerDisconnect(clientID);
     }
 
     public void ClientDisconnect()
