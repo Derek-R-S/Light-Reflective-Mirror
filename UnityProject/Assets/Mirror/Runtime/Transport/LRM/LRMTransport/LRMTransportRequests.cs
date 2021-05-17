@@ -44,7 +44,7 @@ namespace LightReflectiveMirror
                         break;
                     case UnityWebRequest.Result.Success:
                         var parsedAddress = JsonUtility.FromJson<RelayAddress>(result.Decompress());
-                        Connect(parsedAddress.Address, parsedAddress.Port);
+                        Connect(parsedAddress.address, parsedAddress.port);
                         endpointServerPort = parsedAddress.EndpointPort;
                         break;
                 }
