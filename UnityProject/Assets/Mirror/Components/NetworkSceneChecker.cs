@@ -14,7 +14,7 @@ namespace Mirror
     [DisallowMultipleComponent]
     [AddComponentMenu("Network/NetworkSceneChecker")]
     [RequireComponent(typeof(NetworkIdentity))]
-    [HelpURL("https://mirror-networking.gitbook.io/docs/components/network-scene-checker")]
+    [HelpURL("https://mirror-networking.com/docs/Articles/Components/NetworkSceneChecker.html")]
     public class NetworkSceneChecker : NetworkVisibility
     {
         /// <summary>

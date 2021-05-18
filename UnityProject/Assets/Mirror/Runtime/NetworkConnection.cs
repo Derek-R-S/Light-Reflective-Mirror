@@ -15,7 +15,7 @@ namespace Mirror
 
         // TODO this is NetworkServer.handlers on server and NetworkClient.handlers on client.
         //      maybe use them directly. avoid extra state.
-        Dictionary<ushort, NetworkMessageDelegate> messageHandlers;
+        Dictionary<int, NetworkMessageDelegate> messageHandlers;
 
         /// <summary>Unique identifier for this connection that is assigned by the transport layer.</summary>
         // assigned by transport, this id is unique for every connection on server.
@@ -64,26 +64,9 @@ namespace Mirror
         }
 
         /// <summary>Disconnects this connection.</summary>
-        // for future reference, here is how Disconnects work in Mirror.
-        //
-        // first, there are two types of disconnects:
-        // * voluntary: the other end simply disconnected
-        // * involuntary: server disconnects a client by itself
-        //
-        // UNET had special (complex) code to handle both cases differently.
-        //
-        // Mirror handles both cases the same way:
-        // * Disconnect is called from TOP to BOTTOM
-        //   NetworkServer/Client -> NetworkConnection -> Transport.Disconnect()
-        // * Disconnect is handled from BOTTOM to TOP
-        //   Transport.OnDisconnected -> ...
-        //
-        // in other words, calling Disconnect() does no cleanup whatsoever.
-        // it simply asks the transport to disconnect.
-        // then later the transport events will do the clean up.
         public abstract void Disconnect();
 
-        internal void SetHandlers(Dictionary<ushort, NetworkMessageDelegate> handlers)
+        internal void SetHandlers(Dictionary<int, NetworkMessageDelegate> handlers)
         {
             messageHandlers = handlers;
         }
@@ -153,7 +136,7 @@ namespace Mirror
         }
 
         // TODO move to server's NetworkConnectionToClient?
-        internal void RemoveFromObservingsObservers()
+        internal void RemoveObservers()
         {
             foreach (NetworkIdentity netIdentity in observing)
             {
@@ -165,7 +148,7 @@ namespace Mirror
         // helper function
         protected bool UnpackAndInvoke(NetworkReader reader, int channelId)
         {
-            if (MessagePacking.Unpack(reader, out ushort msgType))
+            if (MessagePacking.Unpack(reader, out int msgType))
             {
                 // try to invoke the handler for that message
                 if (messageHandlers.TryGetValue(msgType, out NetworkMessageDelegate msgDelegate))
@@ -188,8 +171,8 @@ namespace Mirror
             }
         }
 
-        // called by NetworkServer/NetworkClient OnTransportData
-        internal void OnTransportData(ArraySegment<byte> buffer, int channelId)
+        // called when receiving data from the transport
+        internal void TransportReceive(ArraySegment<byte> buffer, int channelId)
         {
             if (buffer.Count < MessagePacking.HeaderSize)
             {

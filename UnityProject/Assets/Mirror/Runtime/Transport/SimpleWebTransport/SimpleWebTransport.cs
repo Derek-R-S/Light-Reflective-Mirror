@@ -234,14 +234,15 @@ namespace Mirror.SimpleWeb
             server = null;
         }
 
-        public override void ServerDisconnect(int connectionId)
+        public override bool ServerDisconnect(int connectionId)
         {
             if (!ServerActive())
             {
                 Debug.LogError("SimpleWebServer Not Active");
+                return false;
             }
 
-            server.KickClient(connectionId);
+            return server.KickClient(connectionId);
         }
 
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)

@@ -36,7 +36,6 @@ namespace Mirror
 
         public static void Reset()
         {
-            stopwatch.Restart();
             _rtt = new ExponentialMovingAverage(PingWindowSize);
             _offset = new ExponentialMovingAverage(PingWindowSize);
             offsetMin = double.MinValue;

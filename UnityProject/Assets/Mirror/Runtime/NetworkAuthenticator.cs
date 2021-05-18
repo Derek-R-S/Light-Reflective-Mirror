@@ -7,7 +7,7 @@ namespace Mirror
     [Serializable] public class UnityEventNetworkConnection : UnityEvent<NetworkConnection> {}
 
     /// <summary>Base class for implementing component-based authentication during the Connect phase</summary>
-    [HelpURL("https://mirror-networking.gitbook.io/docs/components/network-authenticators")]
+    [HelpURL("https://mirror-networking.com/docs/Articles/Guides/Authentication.html")]
     public abstract class NetworkAuthenticator : MonoBehaviour
     {
         /// <summary>Notify subscribers on the server when a client is authenticated</summary>
@@ -44,30 +44,24 @@ namespace Mirror
         /// <summary>Called when client stops, used to unregister message handlers if needed.</summary>
         public virtual void OnStopClient() {}
 
-        [Obsolete("Deprecated: Remove the NetworkConnection parameter from your override and use NetworkClient.connection instead")]
-        public virtual void OnClientAuthenticate(NetworkConnection conn) => OnClientAuthenticate();
-
         /// <summary>Called on client from OnClientAuthenticateInternal when a client needs to authenticate</summary>
-        public abstract void OnClientAuthenticate();
+        // TODO client callbacks don't need NetworkConnection parameter. use NetworkClient.connection!
+        public abstract void OnClientAuthenticate(NetworkConnection conn);
 
-        [Obsolete("Deprecated: Remove the NetworkConnection parameter from your override and use NetworkClient.connection instead")]
-        protected void ClientAccept(NetworkConnection conn) => ClientAccept();
-
-        protected void ClientAccept()
+        // TODO client callbacks don't need NetworkConnection parameter. use NetworkClient.connection!
+        protected void ClientAccept(NetworkConnection conn)
         {
-            OnClientAuthenticated.Invoke(NetworkClient.connection);
+            OnClientAuthenticated.Invoke(conn);
         }
 
-        [Obsolete("Deprecated: Remove the NetworkConnection parameter from your override and use NetworkClient.connection instead")]
-        protected void ClientReject(NetworkConnection conn) => ClientReject();
-
-        protected void ClientReject()
+        // TODO client callbacks don't need NetworkConnection parameter. use NetworkClient.connection!
+        protected void ClientReject(NetworkConnection conn)
         {
             // Set this on the client for local reference
-            NetworkClient.connection.isAuthenticated = false;
+            conn.isAuthenticated = false;
 
             // disconnect the client
-            NetworkClient.connection.Disconnect();
+            conn.Disconnect();
         }
 
         void OnValidate()

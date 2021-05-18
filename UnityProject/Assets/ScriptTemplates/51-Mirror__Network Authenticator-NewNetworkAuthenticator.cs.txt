@@ -3,7 +3,8 @@ using UnityEngine.SceneManagement;
 using Mirror;
 
 /*
-    Documentation: https://mirror-networking.gitbook.io/docs/components/network-authenticators
+    Authenticators: https://mirror-networking.com/docs/Components/Authenticators/
+    Documentation: https://mirror-networking.com/docs/Guides/Authentication.html
     API Reference: https://mirror-networking.com/docs/api/Mirror.NetworkAuthenticator.html
 */
 
@@ -67,7 +68,8 @@ public class #SCRIPTNAME# : NetworkAuthenticator
     /// <summary>
     /// Called on client from OnClientAuthenticateInternal when a client needs to authenticate
     /// </summary>
-    public override void OnClientAuthenticate()
+    /// <param name="conn">Connection of the client.</param>
+    public override void OnClientAuthenticate(NetworkConnection conn)
     {
         AuthRequestMessage authRequestMessage = new AuthRequestMessage();
 
@@ -77,11 +79,12 @@ public class #SCRIPTNAME# : NetworkAuthenticator
     /// <summary>
     /// Called on client when the server's AuthResponseMessage arrives
     /// </summary>
+    /// <param name="conn">Connection to client.</param>
     /// <param name="msg">The message payload</param>
     public void OnAuthResponseMessage(AuthResponseMessage msg)
     {
         // Authentication has been accepted
-        ClientAccept();
+        ClientAccept(NetworkClient.connection);
     }
 
     #endregion

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Mirror.Experimental
 {
     [AddComponentMenu("Network/Experimental/NetworkLerpRigidbody")]
-    [HelpURL("https://mirror-networking.gitbook.io/docs/components/network-lerp-rigidbody")]
+    [HelpURL("https://mirror-networking.com/docs/Articles/Components/NetworkLerpRigidbody.html")]
     public class NetworkLerpRigidbody : NetworkBehaviour
     {
         [Header("Settings")]

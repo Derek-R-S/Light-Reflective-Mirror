@@ -13,7 +13,7 @@ namespace Mirror
     [DisallowMultipleComponent]
     [AddComponentMenu("Network/NetworkOwnerChecker")]
     [RequireComponent(typeof(NetworkIdentity))]
-    [HelpURL("https://mirror-networking.gitbook.io/docs/components/network-owner-checker")]
+    [HelpURL("https://mirror-networking.com/docs/Components/NetworkOwnerChecker.html")]
     public class NetworkOwnerChecker : NetworkVisibility
     {
         /// <summary>

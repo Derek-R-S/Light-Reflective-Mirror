@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Mirror.Experimental
 {
     [AddComponentMenu("Network/Experimental/NetworkRigidbody")]
-    [HelpURL("https://mirror-networking.gitbook.io/docs/components/network-rigidbody")]
+    [HelpURL("https://mirror-networking.com/docs/Articles/Components/NetworkRigidbody.html")]
     public class NetworkRigidbody : NetworkBehaviour
     {
         [Header("Settings")]

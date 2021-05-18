@@ -6,9 +6,8 @@ using UnityEngine;
 
 namespace Mirror
 {
-    [HelpURL("https://mirror-networking.gitbook.io/docs/transports/fallback-transport")]
+    [HelpURL("https://mirror-networking.com/docs/Articles/Transports/Fallback.html")]
     [DisallowMultipleComponent]
-    [Obsolete("Fallback Transport will be retired. It was only needed for Apathy/Libuv. Use kcp or Telepathy instead, those run everywhere.")]
     public class FallbackTransport : Transport
     {
         public Transport[] transports;
@@ -112,9 +111,9 @@ namespace Mirror
             return available.ServerGetClientAddress(connectionId);
         }
 
-        public override void ServerDisconnect(int connectionId)
+        public override bool ServerDisconnect(int connectionId)
         {
-            available.ServerDisconnect(connectionId);
+            return available.ServerDisconnect(connectionId);
         }
 
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)

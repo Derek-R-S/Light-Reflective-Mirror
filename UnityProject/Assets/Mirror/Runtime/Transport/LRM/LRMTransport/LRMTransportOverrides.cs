@@ -136,18 +136,20 @@ namespace LightReflectiveMirror
             }
         }
 
-        public override void ServerDisconnect(int connectionId)
+        public override bool ServerDisconnect(int connectionId)
         {
             if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
             {
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.KickPlayer);
                 _clientSendBuffer.WriteInt(ref pos, relayId);
-                return;
+                return true;
             }
 
             if (_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
-                _directConnectModule.KickClient(directId);
+                return _directConnectModule.KickClient(directId);
+
+            return false;
         }
 
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)

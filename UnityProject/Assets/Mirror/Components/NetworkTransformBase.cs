@@ -53,10 +53,6 @@ namespace Mirror
         [Header("Interpolation")]
         [Tooltip("Set to true if scale should be interpolated, false is ideal for instant sprite flipping.")]
         public bool interpolateScale = true;
-        [Tooltip("Set to true if rotation should be interpolated, false is ideal for instant turning, common in retro 2d style games")]
-        public bool interpolateRotation = true;
-        [Tooltip("Set to true if position should be interpolated, false is ideal for grid bassed movement")]
-        public bool interpolatePosition = true;
 
         [Header("Synchronization")]
         // It should be very rare cases that people want to continuously sync scale, true by default to not break previous projects that use it
@@ -269,13 +265,9 @@ namespace Mirror
             return 0;
         }
 
-        Vector3 InterpolatePosition(DataPoint start, DataPoint goal, Vector3 currentPosition)
+        static Vector3 InterpolatePosition(DataPoint start, DataPoint goal, Vector3 currentPosition)
         {
-            if (!interpolatePosition)
-            {
-                return goal.localPosition;
-            }
-            else if (start != null)
+            if (start != null)
             {
                 // Option 1: simply interpolate based on time. but stutter
                 // will happen, it's not that smooth. especially noticeable if
@@ -292,13 +284,9 @@ namespace Mirror
             return currentPosition;
         }
 
-        Quaternion InterpolateRotation(DataPoint start, DataPoint goal, Quaternion defaultRotation)
+        static Quaternion InterpolateRotation(DataPoint start, DataPoint goal, Quaternion defaultRotation)
         {
-            if (!interpolateRotation)
-            {
-                return goal.localRotation;
-            }
-            else if (start != null)
+            if (start != null)
             {
                 float t = CurrentInterpolationFactor(start, goal);
                 return Quaternion.Slerp(start.localRotation, goal.localRotation, t);
@@ -308,15 +296,7 @@ namespace Mirror
 
         Vector3 InterpolateScale(DataPoint start, DataPoint goal, Vector3 currentScale)
         {
-            if (!syncScale)
-            {
-                return currentScale;
-            }
-            else if (!interpolateScale)
-            {
-                return goal.localScale;
-            }
-            else if (interpolateScale && start != null )
+            if (start != null && interpolateScale)
             {
                 float t = CurrentInterpolationFactor(start, goal);
                 return Vector3.Lerp(start.localScale, goal.localScale, t);

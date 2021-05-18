@@ -1,1 +1,20 @@
-// removed 2021-05-13
+using UnityEngine;
+
+namespace Mirror.Cloud.Examples
+{
+    /// <summary>
+    /// Instantiate a new NetworkManager if one does not already exist
+    /// </summary>
+    public class InstantiateNetworkManager : MonoBehaviour
+    {
+        public GameObject prefab;
+
+        void Awake()
+        {
+            if (NetworkManager.singleton == null)
+            {
+                Instantiate(prefab);
+            }
+        }
+    }
+}
