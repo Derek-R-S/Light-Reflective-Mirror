@@ -10,7 +10,7 @@ namespace LightReflectiveMirror
         // Required Settings
         //========================
         public string TransportDLL = "MultiCompiled.dll";
-        public string TransportClass = "Mirror.SimpleWebTransport";
+        public string TransportClass = "kcp2k.KcpTransport";
         public string AuthenticationKey = "Secret Auth Key";
         public ushort TransportPort = 7777;
         public int UpdateLoopTime = 10;
