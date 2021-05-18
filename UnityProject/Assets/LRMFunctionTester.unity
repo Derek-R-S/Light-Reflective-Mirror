@@ -525,6 +525,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clientToServerTransport: {fileID: 978065553}
   serverIP: 127.0.0.1
+  serverPort: 7777
   endpointServerPort: 8080
   heartBeatInterval: 3
   connectOnAwake: 1

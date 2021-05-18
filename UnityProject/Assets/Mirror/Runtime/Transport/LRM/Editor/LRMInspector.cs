@@ -251,6 +251,7 @@ namespace LightReflectiveMirror
                                 EditorUtility.SetDirty(lrm);
                             }
                         }
+                        serializedObject.ApplyModifiedProperties();
                         break;
                     case 1:
                         // NAT punch tab.
@@ -273,6 +274,7 @@ namespace LightReflectiveMirror
                             GUI.enabled = true;
                             directModule.directConnectTransport = (Transport)EditorGUILayout.ObjectField("Direct Transport", directModule.directConnectTransport, typeof(Transport), true);
                         }
+                        serializedObject.ApplyModifiedProperties();
                         break;
                     case 2:
                         // Load balancer tab
@@ -284,7 +286,7 @@ namespace LightReflectiveMirror
                         lrm.region = (LRMRegions)EditorGUILayout.EnumPopup("Node Region", lrm.region);
                         if (!lrm.useLoadBalancer)
                             GUI.enabled = true;
-
+                        serializedObject.ApplyModifiedProperties();
                         break;
                     case 3:
                         // Other tab...
@@ -305,6 +307,7 @@ namespace LightReflectiveMirror
                         EditorGUILayout.Space();
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("diconnectedFromRelay"));
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("serverListUpdated"));
+                        serializedObject.ApplyModifiedProperties();
                         break;
                 }
                 EditorGUILayout.EndVertical();
