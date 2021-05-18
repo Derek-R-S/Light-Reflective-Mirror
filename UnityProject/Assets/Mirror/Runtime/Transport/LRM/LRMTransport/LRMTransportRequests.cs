@@ -9,7 +9,6 @@ namespace LightReflectiveMirror
 {
     public partial class LightReflectiveMirrorTransport : Transport
     {
-
         public void RequestServerList(LRMRegions searchRegion = LRMRegions.Any)
         {
             if (_isAuthenticated && _connectedToRelay)
