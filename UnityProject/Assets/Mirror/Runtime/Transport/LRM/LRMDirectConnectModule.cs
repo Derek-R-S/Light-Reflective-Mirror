@@ -92,7 +92,12 @@ public class LRMDirectConnectModule : MonoBehaviour
     {
         if (showDebugLogs)
             Debug.Log("Kicked direct connect client.");
+#if MIRROR_37_0_OR_NEWER
+        directConnectTransport.ServerDisconnect(clientID);
+        return true;
+#else
         return directConnectTransport.ServerDisconnect(clientID);
+#endif
     }
 
     public void ClientDisconnect()
@@ -110,7 +115,7 @@ public class LRMDirectConnectModule : MonoBehaviour
         directConnectTransport.ClientSend(channel, data);
     }
 
-    #region Transport Callbacks
+#region Transport Callbacks
     void OnServerConnected(int clientID)
     {
         if (showDebugLogs)
@@ -157,5 +162,5 @@ public class LRMDirectConnectModule : MonoBehaviour
         if (showDebugLogs)
             Debug.Log("Direct Client Error: " + error);
     }
-    #endregion
+#endregion
 }

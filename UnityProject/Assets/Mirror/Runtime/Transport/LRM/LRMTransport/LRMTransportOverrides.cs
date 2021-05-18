@@ -136,6 +136,21 @@ namespace LightReflectiveMirror
             }
         }
 
+#if MIRROR_37_0_OR_NEWER
+        public override void ServerDisconnect(int connectionId)
+        {
+            if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
+            {
+                int pos = 0;
+                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.KickPlayer);
+                _clientSendBuffer.WriteInt(ref pos, relayId);
+                return;
+            }
+
+            if (_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
+                _directConnectModule.KickClient(directId);
+        }
+#else
         public override bool ServerDisconnect(int connectionId)
         {
             if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
@@ -151,6 +166,7 @@ namespace LightReflectiveMirror
 
             return false;
         }
+#endif
 
         public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
         {
