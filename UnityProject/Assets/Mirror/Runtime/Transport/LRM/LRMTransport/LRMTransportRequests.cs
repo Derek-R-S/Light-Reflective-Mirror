@@ -42,7 +42,7 @@ namespace LightReflectiveMirror
                         Debug.LogWarning("LRM | Network Error while getting a relay to join from Load Balancer.");
                         break;
                     case UnityWebRequest.Result.Success:
-                        var parsedAddress = JsonUtility.FromJson<RelayAddress>(result.Decompress());
+                        var parsedAddress = JsonUtility.FromJson<RelayAddress>(result);
                         Connect(parsedAddress.address, parsedAddress.port);
                         endpointServerPort = parsedAddress.endpointPort;
                         break;

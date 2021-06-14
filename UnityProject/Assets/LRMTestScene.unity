@@ -1106,6 +1106,7 @@ MonoBehaviour:
   Port: 7777
   NoDelay: 1
   Interval: 10
+  Timeout: 10000
   FastResend: 2
   CongestionWindow: 0
   SendWindowSize: 4096
@@ -1196,7 +1197,6 @@ MonoBehaviour:
   autoStartServerBuild: 1
   serverTickRate: 30
   serverBatching: 0
-  serverBatchInterval: 0
   offlineScene: 
   onlineScene: 
   transport: {fileID: 1282001522}
@@ -1238,7 +1238,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   clientToServerTransport: {fileID: 1521806211}
-  serverIP: 127.0.0.1
+  serverIP: localhost
   serverPort: 7777
   endpointServerPort: 8080
   heartBeatInterval: 3
@@ -1380,6 +1380,7 @@ MonoBehaviour:
   Port: 7777
   NoDelay: 1
   Interval: 10
+  Timeout: 10000
   FastResend: 2
   CongestionWindow: 0
   SendWindowSize: 4096
