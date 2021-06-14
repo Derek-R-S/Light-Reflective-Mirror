@@ -107,12 +107,20 @@ public class LRMDirectConnectModule : MonoBehaviour
 
     public void ServerSend(int clientID, ArraySegment<byte> data, int channel)
     {
+#if MIRROR_40_0_OR_NEWER
+        directConnectTransport.ServerSend(clientID, data, channel);
+#else
         directConnectTransport.ServerSend(clientID, channel, data);
+#endif
     }
 
     public void ClientSend(ArraySegment<byte> data, int channel)
     {
+#if MIRROR_40_0_OR_NEWER
+        directConnectTransport.ClientSend(data, channel);
+#else
         directConnectTransport.ClientSend(channel, data);
+#endif
     }
 
 #region Transport Callbacks

@@ -116,7 +116,11 @@ namespace LightReflectiveMirror
 
             _isClient = true;
 
+#if MIRROR_40_0_OR_NEWER
+            clientToServerTransport.ClientSend(new System.ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
+#else
             clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
+#endif
         }
 
         IEnumerator GetServerList(LRMRegions region)
