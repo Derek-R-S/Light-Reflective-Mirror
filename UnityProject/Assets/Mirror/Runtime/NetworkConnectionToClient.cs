@@ -20,37 +20,23 @@ namespace Mirror
         internal class Batch
         {
             // batched messages
+            // IMPORTANT: we queue the serialized messages!
+            //            queueing NetworkMessage would box and allocate!
             internal Queue<PooledNetworkWriter> messages = new Queue<PooledNetworkWriter>();
-
-            // each channel's batch has its own lastSendTime.
-            // (use NetworkTime for maximum precision over days)
-            //
-            // channel batches are full and flushed at different times. using
-            // one global time wouldn't make sense.
-            // -> we want to be able to reset a channels send time after Send()
-            //    flushed it because full. global time wouldn't allow that, so
-            //    we would often flush in Send() and then flush again in Update
-            //    even though we just flushed in Send().
-            // -> initialize with current NetworkTime so first update doesn't
-            //    calculate elapsed via 'now - 0'
-            internal double lastSendTime = NetworkTime.time;
         }
         Dictionary<int, Batch> batches = new Dictionary<int, Batch>();
 
         // batch messages and send them out in LateUpdate (or after batchInterval)
         bool batching;
 
-        // batch interval is 0 by default, meaning that we send immediately.
-        // (useful to run tests without waiting for intervals too)
-        float batchInterval;
-
-        public NetworkConnectionToClient(int networkConnectionId, bool batching, float batchInterval)
+        public NetworkConnectionToClient(int networkConnectionId, bool batching)
             : base(networkConnectionId)
         {
             this.batching = batching;
-            this.batchInterval = batchInterval;
         }
 
+        // TODO if we only have Reliable/Unreliable, then we could initialize
+        // two batches and avoid this code
         Batch GetBatchForChannelId(int channelId)
         {
             // get existing or create new writer for the channelId
@@ -91,8 +77,8 @@ namespace Mirror
                         writer.Position + segment.Count >= max)
                     {
                         // flush & reset writer
-                        Transport.activeTransport.ServerSend(connectionId, channelId, writer.ToArraySegment());
-                        writer.SetLength(0);
+                        Transport.activeTransport.ServerSend(connectionId, writer.ToArraySegment(), channelId);
+                        writer.Position = 0;
                     }
 
                     // now add to writer in any case
@@ -113,13 +99,10 @@ namespace Mirror
                 // send it.
                 if (writer.Position > 0)
                 {
-                    Transport.activeTransport.ServerSend(connectionId, channelId, writer.ToArraySegment());
-                    writer.SetLength(0);
+                    Transport.activeTransport.ServerSend(connectionId, writer.ToArraySegment(), channelId);
+                    writer.Position = 0;
                 }
             }
-
-            // reset send time for this channel's batch
-            batch.lastSendTime = NetworkTime.time;
         }
 
         internal override void Send(ArraySegment<byte> segment, int channelId = Channels.Reliable)
@@ -144,13 +127,11 @@ namespace Mirror
                     batch.messages.Enqueue(writer);
                 }
                 // otherwise send directly to minimize latency
-                else Transport.activeTransport.ServerSend(connectionId, channelId, segment);
+                else Transport.activeTransport.ServerSend(connectionId, segment, channelId);
             }
         }
 
-        // flush batched messages every batchInterval to make sure that they are
-        // sent out every now and then, even if the batch isn't full yet.
-        // (avoids 30s latency if batches would only get full every 30s)
+        // flush batched messages at the end of every Update.
         internal void Update()
         {
             // batching?
@@ -159,12 +140,10 @@ namespace Mirror
                 // go through batches for all channels
                 foreach (KeyValuePair<int, Batch> kvp in batches)
                 {
-                    // enough time elapsed to flush this channel's batch?
-                    // and not empty?
-                    double elapsed = NetworkTime.time - kvp.Value.lastSendTime;
-                    if (elapsed >= batchInterval && kvp.Value.messages.Count > 0)
+                    // is this channel's batch not empty?
+                    if (kvp.Value.messages.Count > 0)
                     {
-                        // send the batch. time will be reset internally.
+                        // send the batch.
                         //Debug.Log($"sending batch of {kvp.Value.writer.Position} bytes for channel={kvp.Key} connId={connectionId}");
                         SendBatch(kvp.Key, kvp.Value);
                     }
@@ -179,7 +158,13 @@ namespace Mirror
             // (might be client or host mode here)
             isReady = false;
             Transport.activeTransport.ServerDisconnect(connectionId);
-            RemoveObservers();
+
+            // IMPORTANT: NetworkConnection.Disconnect() is NOT called for
+            // voluntary disconnects from the other end.
+            // -> so all 'on disconnect' cleanup code needs to be in
+            //    OnTransportDisconnect, where it's called for both voluntary
+            //    and involuntary disconnects!
+            RemoveFromObservingsObservers();
         }
     }
 }

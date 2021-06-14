@@ -13,12 +13,15 @@ namespace Mirror
     [DisallowMultipleComponent]
     [AddComponentMenu("Network/NetworkMatchChecker")]
     [RequireComponent(typeof(NetworkIdentity))]
-    [HelpURL("https://mirror-networking.com/docs/Articles/Components/NetworkMatchChecker.html")]
+    [HelpURL("https://mirror-networking.gitbook.io/docs/components/network-match-checker")]
     public class NetworkMatchChecker : NetworkVisibility
     {
-        static readonly Dictionary<Guid, HashSet<NetworkIdentity>> matchPlayers = new Dictionary<Guid, HashSet<NetworkIdentity>>();
+        // internal for tests
+        internal static readonly Dictionary<Guid, HashSet<NetworkIdentity>> matchPlayers =
+            new Dictionary<Guid, HashSet<NetworkIdentity>>();
 
-        Guid currentMatch = Guid.Empty;
+        // internal for tests
+        internal Guid currentMatch = Guid.Empty;
 
         [Header("Diagnostics")]
         [SyncVar]
