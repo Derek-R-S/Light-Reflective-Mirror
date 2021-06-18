@@ -25,7 +25,7 @@ namespace LightReflectiveMirror
             try
             {
                 // easier to just ping an outside source to get our public ip
-                publicIP = webClient.DownloadString("http://ipv4.icanhazip.com").Replace("\\r", "").Replace("\\n", "").Trim();
+                publicIP = webClient.DownloadString("https://api.ipify.org/").Replace("\\r", "").Replace("\\n", "").Trim();
             }
             catch
             {
