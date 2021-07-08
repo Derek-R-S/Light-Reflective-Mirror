@@ -249,8 +249,9 @@ namespace LightReflectiveMirror.LoadBalancing
 
                 return true;
             }
-            catch
+            catch (Exception e)
             {
+                Logger.ForceLogMessage(e.ToString(), ConsoleColor.Red);
                 return false;
             }
         }

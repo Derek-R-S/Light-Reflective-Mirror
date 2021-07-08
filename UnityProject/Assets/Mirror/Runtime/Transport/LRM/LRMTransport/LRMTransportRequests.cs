@@ -204,7 +204,7 @@ namespace LightReflectiveMirror
 
                     case UnityWebRequest.Result.Success:
                         relayServerList?.Clear();
-                        relayServerList = JsonUtilityHelper.FromJson<Room>(result.Decompress()).ToList();
+                        relayServerList = JsonUtilityHelper.FromJson<Room>(result).ToList();
                         serverListUpdated?.Invoke();
                         _serverListUpdated = true;
                         break;
@@ -217,7 +217,7 @@ namespace LightReflectiveMirror
                 else
                 {
                     relayServerList?.Clear();
-                    relayServerList = JsonUtilityHelper.FromJson<Room>(result.Decompress()).ToList();
+                    relayServerList = JsonUtilityHelper.FromJson<Room>(result).ToList();
                     serverListUpdated?.Invoke();
                     _serverListUpdated = true;
                 }
