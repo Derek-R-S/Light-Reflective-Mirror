@@ -160,6 +160,7 @@ namespace LightReflectiveMirror
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.KickPlayer);
                 _clientSendBuffer.WriteInt(ref pos, relayId);
+                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
                 return true;
             }
 
@@ -178,6 +179,7 @@ namespace LightReflectiveMirror
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.KickPlayer);
                 _clientSendBuffer.WriteInt(ref pos, relayId);
+                clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
                 return;
             }
 
