@@ -100,11 +100,6 @@ UpdateLoopTime - The time in miliseconds between calling 'Update' on the transpo
 
 UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat. By default its 100, which if updateLoopTime is 10, means every (10 * 100 = 1000ms) it will send out a heartbeat.
 
-
-## Example
-
-Maqsoom's Server List Example - https://github.com/maqsoom/LightReflectiveMirror-Example
-
 ## What to choose, Epic, Steam, LRM?
 
 There are quiet a few relay transports for mirror at this point, It can often be difficult to pick one that most suits your needs. So I'll quickly go over my view on it and hopefully it helps you make an informed decision.
