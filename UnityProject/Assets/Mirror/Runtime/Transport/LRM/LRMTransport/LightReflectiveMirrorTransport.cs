@@ -200,7 +200,7 @@ namespace LightReflectiveMirror
                         break;
 
                     case OpCodes.ServerLeft:
-                        // Called when we were kicked, or server was closed.
+                        // Called when server was closed.
                         if (_isClient)
                         {
                             _isClient = false;

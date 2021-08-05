@@ -145,6 +145,7 @@ namespace LightReflectiveMirror
         {
             for (int i = 0; i < rooms.Count; i++)
             {
+                // if host left
                 if (rooms[i].hostId == clientId)
                 {
                     int pos = 0;
@@ -167,6 +168,7 @@ namespace LightReflectiveMirror
                 }
                 else
                 {
+                    // if the person that tried to kick wasnt host and it wasnt the client leaving on their own
                     if (requiredHostId != -1 && rooms[i].hostId != requiredHostId)
                         continue;
 
@@ -180,6 +182,19 @@ namespace LightReflectiveMirror
 
                         Program.transport.ServerSend(rooms[i].hostId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
                         _sendBuffers.Return(sendBuffer);
+
+                        // temporary solution to kicking bug
+                        // this tells the local player that got kicked that he, well, got kicked.
+                        pos = 0;
+                        sendBuffer = _sendBuffers.Rent(1);
+
+                        sendBuffer.WriteByte(ref pos, (byte)OpCodes.ServerLeft);
+
+                        Program.transport.ServerSend(clientId, 0, new ArraySegment<byte>(sendBuffer, 0, pos));
+                        _sendBuffers.Return(sendBuffer);
+
+                        //end temporary solution
+
                         Endpoint.RoomsModified();
                         _cachedClientRooms.Remove(clientId);
                     }
