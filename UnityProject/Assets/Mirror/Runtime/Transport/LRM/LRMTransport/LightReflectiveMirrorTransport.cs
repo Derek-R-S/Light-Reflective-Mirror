@@ -13,12 +13,9 @@ namespace LightReflectiveMirror
     public partial class LightReflectiveMirrorTransport : Transport
     {
         public bool IsAuthenticated() => _isAuthenticated;
+
         private void Awake()
         {
-#if !NET_4_6
-            throw new Exception("LRM | Please switch to .NET 4.x for LRM to function properly!");
-#endif
-
             if (Application.platform == RuntimePlatform.WebGLPlayer)
                 useNATPunch = false;
             else
@@ -56,17 +53,18 @@ namespace LightReflectiveMirror
             clientToServerTransport.OnClientError = (e) => Debug.LogException(e);
         }
 
-        void Disconnected()
+        private void Disconnected()
         {
             _connectedToRelay = false;
             _isAuthenticated = false;
-            diconnectedFromRelay?.Invoke();
+            disconnectedFromRelay?.Invoke();
             serverStatus = "Disconnected from relay.";
         }
 
         private void OnConnectedToRelay()
         {
             _connectedToRelay = true;
+            connectedToRelay?.Invoke();
         }
 
         public void ConnectToRelay()
@@ -121,7 +119,7 @@ namespace LightReflectiveMirror
             }
         }
 
-        void SendHeartbeat()
+        private void SendHeartbeat()
         {
             if (_connectedToRelay)
             {
@@ -161,7 +159,7 @@ namespace LightReflectiveMirror
             }
         }
 
-        void DataReceived(ArraySegment<byte> segmentData, int channel)
+        private void DataReceived(ArraySegment<byte> segmentData, int channel)
         {
             try
             {
@@ -178,11 +176,13 @@ namespace LightReflectiveMirror
                         _isAuthenticated = true;
                         RequestServerList();
                         break;
+
                     case OpCodes.AuthenticationRequest:
                         // Server requested that we send an authentication request, lets send our auth key.
                         serverStatus = "Sent authentication to relay...";
                         SendAuthKey();
                         break;
+
                     case OpCodes.GetData:
                         // Someone sent us a packet from their mirror over the relay
                         var recvData = data.ReadBytes(ref pos);
@@ -198,6 +198,7 @@ namespace LightReflectiveMirror
                         if (_isClient)
                             OnClientDataReceived?.Invoke(new ArraySegment<byte>(recvData), channel);
                         break;
+
                     case OpCodes.ServerLeft:
                         // Called when we were kicked, or server was closed.
                         if (_isClient)
@@ -206,6 +207,7 @@ namespace LightReflectiveMirror
                             OnClientDisconnected?.Invoke();
                         }
                         break;
+
                     case OpCodes.PlayerDisconnected:
                         // Called when another player left the room.
                         if (_isServer)
@@ -219,10 +221,12 @@ namespace LightReflectiveMirror
                             }
                         }
                         break;
+
                     case OpCodes.RoomCreated:
                         // We successfully created the room, the server also gave us the serverId of the room!
                         serverId = data.ReadString(ref pos);
                         break;
+
                     case OpCodes.ServerJoined:
                         // Called when a player joins the room or when we joined a room.
                         int clientId = data.ReadInt(ref pos);
@@ -239,6 +243,7 @@ namespace LightReflectiveMirror
                             _currentMemberId++;
                         }
                         break;
+
                     case OpCodes.DirectConnectIP:
                         // Either a client is trying to join us via NAT Punch, or we are trying to join a host over NAT punch/Direct connect.
                         var ip = data.ReadString(ref pos);
@@ -264,16 +269,17 @@ namespace LightReflectiveMirror
 
                             if (useNATPunch && attemptNatPunch)
                             {
-                                if (ip == "127.0.0.1")
-                                    _directConnectModule.JoinServer("127.0.0.1", port + 1);
+                                if (ip == LOCALHOST)
+                                    _directConnectModule.JoinServer(LOCALHOST, port + 1);
                                 else
-                                    _directConnectModule.JoinServer("127.0.0.1", _NATIP.Port - 1);
+                                    _directConnectModule.JoinServer(LOCALHOST, _NATIP.Port - 1);
                             }
                             else
                                 _directConnectModule.JoinServer(ip, port);
                         }
 
                         break;
+
                     case OpCodes.RequestNATConnection:
                         // Called when the LRM node would like us to establish a NAT puncher connection. Its safe to ignore if NAT punch is disabled.
                         if (useNATPunch && GetLocalIp() != null && _directConnectModule != null)
@@ -297,20 +303,18 @@ namespace LightReflectiveMirror
                                         _NATPuncher.Client.Bind(_NATIP);
                                         break;
                                     }
-                                    catch {} // Binding port is in use, keep trying :P
+                                    catch { } // Binding port is in use, keep trying :P
                                 }
                             }
-
 
                             if (!IPAddress.TryParse(serverIP, out IPAddress serverAddr))
                                 serverAddr = Dns.GetHostEntry(serverIP).AddressList[0];
 
                             _relayPuncherIP = new IPEndPoint(serverAddr, NATPunchtroughPort);
 
-                            // Send 3 to lower chance of it being dropped or corrupted when received on server.
-                            _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
-                            _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
-                            _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
+                            for (int attempts = 0; attempts < NAT_PUNCH_ATTEMPTS; attempts++)
+                                _NATPuncher.Send(initalData, sendPos, _relayPuncherIP);
+
                             _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
                         }
                         break;
@@ -414,18 +418,18 @@ namespace LightReflectiveMirror
             }
         }
 
-        Room? GetServerForID(string serverID)
+        private Room? GetServerForID(string serverID)
         {
-            for(int i = 0; i < relayServerList.Count; i++)
+            for (int i = 0; i < relayServerList.Count; i++)
             {
-                if(relayServerList[i].serverId == serverID)
+                if (relayServerList[i].serverId == serverID)
                     return relayServerList[i];
             }
 
             return null;
         }
 
-        void SendAuthKey()
+        private void SendAuthKey()
         {
             int pos = 0;
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.AuthenticationResponse);
@@ -481,5 +485,4 @@ namespace LightReflectiveMirror
         public string address;
         public LRMRegions serverRegion;
     }
-
 }

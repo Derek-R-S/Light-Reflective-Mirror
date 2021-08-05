@@ -207,14 +207,6 @@ namespace LightReflectiveMirror
                         }
                     }
                 }
-#if !NET_4_6
-                EditorGUILayout.BeginVertical("Box");
-                EditorGUILayout.HelpBox("For LRM to function properly, it needs the API Compatibility to be at 4.x", MessageType.Error);
-                if (GUILayout.Button("Change to 4.x"))
-                    PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.Standalone, ApiCompatibilityLevel.NET_4_6);
-                EditorGUILayout.EndVertical();
-                EditorGUILayout.Space();
-#endif
 
                 currentTab = GUILayout.Toolbar(currentTab, tabs);
                 EditorGUILayout.Space();
@@ -305,7 +297,8 @@ namespace LightReflectiveMirror
 
                         EditorGUILayout.Space();
                         EditorGUILayout.Space();
-                        EditorGUILayout.PropertyField(serializedObject.FindProperty("diconnectedFromRelay"));
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("connectedToRelay"));
+                        EditorGUILayout.PropertyField(serializedObject.FindProperty("disconnectedFromRelay"));
                         EditorGUILayout.PropertyField(serializedObject.FindProperty("serverListUpdated"));
                         serializedObject.ApplyModifiedProperties();
                         break;

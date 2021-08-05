@@ -95,13 +95,13 @@ namespace LightReflectiveMirror
             DisconnectFromRelay();
 
             while (IsAuthenticated())
-                yield return new WaitForEndOfFrame();
+                yield return null;
 
             endpointServerPort = room.relayInfo.endpointPort;
             Connect(room.relayInfo.address, room.relayInfo.port);
 
             while (!IsAuthenticated())
-                yield return new WaitForEndOfFrame();
+                yield return null;
 
             int pos = 0;
             _directConnected = false;
@@ -109,10 +109,9 @@ namespace LightReflectiveMirror
             _clientSendBuffer.WriteString(ref pos, room.serverId);
             _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null);
 
-            if (GetLocalIp() == null)
-                _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
-            else
-                _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+            string local = GetLocalIp();
+
+            _clientSendBuffer.WriteString(ref pos, local ?? "0.0.0.0");
 
             _isClient = true;
 

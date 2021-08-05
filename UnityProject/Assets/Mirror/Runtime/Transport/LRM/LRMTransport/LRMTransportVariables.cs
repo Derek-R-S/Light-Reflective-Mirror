@@ -16,11 +16,14 @@ namespace LightReflectiveMirror
         public float heartBeatInterval = 3;
         public bool connectOnAwake = true;
         public string authenticationKey = "Secret Auth Key";
-        public UnityEvent diconnectedFromRelay;
+
+        public UnityEvent disconnectedFromRelay;
+        public UnityEvent connectedToRelay;
 
         // NAT Puncher variables
         public bool useNATPunch = false;
         public int NATPunchtroughPort = -1;
+        private const int NAT_PUNCH_ATTEMPTS = 3;
 
         // LLB variables (LRM Load Balancer)
         public bool useLoadBalancer = false;
@@ -32,6 +35,8 @@ namespace LightReflectiveMirror
         public string extraServerData = "Map 1";
         public int maxServerPlayers = 10;
         public bool isPublicServer = true;
+
+        private const string LOCALHOST = "127.0.0.1";
 
         // Server list variables
         public UnityEvent serverListUpdated;

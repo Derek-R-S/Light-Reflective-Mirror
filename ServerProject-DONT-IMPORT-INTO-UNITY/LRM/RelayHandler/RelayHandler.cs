@@ -25,7 +25,7 @@ namespace LightReflectiveMirror
             const int LENGTH = 5;
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var randomID = "";
-            var random = new Random();
+            var random = _cachedRandom;
 
             do
             {

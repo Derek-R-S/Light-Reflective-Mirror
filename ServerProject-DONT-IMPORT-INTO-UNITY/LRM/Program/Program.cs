@@ -81,6 +81,9 @@ namespace LightReflectiveMirror
 
         private async Task HeartbeatLoop()
         {
+            // default heartbeat data
+            byte[] heartbeat = new byte[] { 200 };
+
             while (true)
             {
                 try
@@ -100,7 +103,7 @@ namespace LightReflectiveMirror
                     _currentHeartbeatTimer = 0;
 
                     for (int i = 0; i < _currentConnections.Count; i++)
-                        transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(new byte[] { 200 }));
+                        transport.ServerSend(_currentConnections[i], 0, new ArraySegment<byte>(heartbeat));
 
                     if (conf.UseLoadBalancer)
                     {
