@@ -85,11 +85,7 @@ namespace LightReflectiveMirror
 
         private void SendData(byte[] clientData, int channel, int sendTo, int senderId)
         {
-            // 1 byte for opcode
-            var headerLength = 1;
-            var payloadLength = headerLength + clientData.Length;
-
-            if (payloadLength > _maxPacketSize)
+            if (clientData.Length > _maxPacketSize)
             {
                 Program.transport.ServerDisconnect(senderId);
                 Program.WriteLogMessage($"Client {senderId} tried to send more than max packet size! Disconnecting...");
@@ -97,7 +93,7 @@ namespace LightReflectiveMirror
             }
 
             int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent(payloadLength);
+            byte[] sendBuffer = _sendBuffers.Rent(_maxPacketSize);
    
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetData);
             sendBuffer.WriteBytes(ref pos, clientData);
@@ -108,11 +104,7 @@ namespace LightReflectiveMirror
 
         private void SendDataToRoomHost(int senderId, byte[] clientData, int channel, Room room)
         {
-            // 1 byte - opcode, 4 bytes for sizeof(int) client id
-            var headerLength = 5;
-            var payloadLength = headerLength + clientData.Length;
-
-            if(payloadLength > _maxPacketSize)
+            if(clientData.Length > _maxPacketSize)
             {
                 Program.transport.ServerDisconnect(senderId);
                 Program.WriteLogMessage($"Client {senderId} tried to send more than max packet size! Disconnecting...");
@@ -121,7 +113,7 @@ namespace LightReflectiveMirror
             
             // We are not the host, so send the data to the host.
             int pos = 0; 
-            byte[] sendBuffer = _sendBuffers.Rent(payloadLength);
+            byte[] sendBuffer = _sendBuffers.Rent(_maxPacketSize);
 
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetData);
             sendBuffer.WriteBytes(ref pos, clientData);
