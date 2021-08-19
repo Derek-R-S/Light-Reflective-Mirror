@@ -58,8 +58,15 @@ namespace LightReflectiveMirror
 
                 switch (opcode)
                 {
-                    case OpCodes.CreateRoom:
-                        CreateRoom(clientId, data.ReadInt(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadString(ref pos), data.ReadBool(ref pos), data.ReadInt(ref pos));
+                    case OpCodes.CreateRoom: // bruh
+                        CreateRoom(clientId, data.ReadInt   (ref pos), 
+                                             data.ReadString(ref pos), 
+                                             data.ReadBool  (ref pos), 
+                                             data.ReadString(ref pos), 
+                                             data.ReadBool  (ref pos), 
+                                             data.ReadString(ref pos), 
+                                             data.ReadBool  (ref pos), 
+                                             data.ReadInt   (ref pos));
                         break;
                     case OpCodes.RequestID:
                         SendClientID(clientId);
@@ -100,7 +107,9 @@ namespace LightReflectiveMirror
             }
             catch
             {
-                // Do Nothing. Client probably sent some invalid data.
+                // sent invalid data, boot them hehe
+                Program.WriteLogMessage($"Client {clientId} sent bad data! Removing from LRM node.");
+                Program.transport.ServerDisconnect(clientId);
             }
         }
 

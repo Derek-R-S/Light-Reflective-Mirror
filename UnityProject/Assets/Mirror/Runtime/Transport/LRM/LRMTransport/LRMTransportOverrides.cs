@@ -86,19 +86,11 @@ namespace LightReflectiveMirror
                 }
                 else
                 {
-                    if (GetLocalIp() == null)
-                        _clientSendBuffer.WriteString(ref pos, "0.0.0.0");
-                    else
-                        _clientSendBuffer.WriteString(ref pos, GetLocalIp());
+                    _clientSendBuffer.WriteString(ref pos, GetLocalIp() ?? "0.0.0.0");
                 }
 
                 _isClient = true;
-#if MIRROR_40_0_OR_NEWER
-                clientToServerTransport.ClientSend(new System.ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new System.ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
-
+                clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
             }
             else
             {
@@ -115,23 +107,15 @@ namespace LightReflectiveMirror
             {
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.LeaveRoom);
-#if MIRROR_40_0_OR_NEWER
+
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
 
             if (_directConnectModule != null)
                 _directConnectModule.ClientDisconnect();
         }
 
-#if MIRROR_40_0_OR_NEWER
         public override void ClientSend(ArraySegment<byte> segment, int channelId)
-#else
-        public override void ClientSend(int channelId, ArraySegment<byte> segment)
-
-#endif
         {
             if (_directConnected)
             {
@@ -143,34 +127,10 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.SendData);
                 _clientSendBuffer.WriteBytes(ref pos, segment.Array.Take(segment.Count).ToArray());
                 _clientSendBuffer.WriteInt(ref pos, 0);
-#if MIRROR_40_0_OR_NEWER
+
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), channelId);
-#else
-                clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
         }
-
-#if !MIRROR_37_0_OR_NEWER
-
-        public override bool ServerDisconnect(int connectionId)
-        {
-            if (_connectedRelayClients.TryGetBySecond(connectionId, out int relayId))
-            {
-                int pos = 0;
-                _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.KickPlayer);
-                _clientSendBuffer.WriteInt(ref pos, relayId);
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-                return true;
-            }
-
-            if (_connectedDirectClients.TryGetBySecond(connectionId, out int directId))
-                return _directConnectModule.KickClient(directId);
-
-            return false;
-        }
-
-#else
 
         public override void ServerDisconnect(int connectionId)
         {
@@ -187,13 +147,7 @@ namespace LightReflectiveMirror
                 _directConnectModule.KickClient(directId);
         }
 
-#endif
-
-#if MIRROR_40_0_OR_NEWER
         public override void ServerSend(int connectionId, ArraySegment<byte> segment, int channelId)
-#else
-        public override void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment)
-#endif
         {
             if (_directConnectModule != null && _connectedDirectClients.TryGetBySecond(connectionId, out int directId))
             {
@@ -205,11 +159,8 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.SendData);
                 _clientSendBuffer.WriteBytes(ref pos, segment.Array.Take(segment.Count).ToArray());
                 _clientSendBuffer.WriteInt(ref pos, _connectedRelayClients.GetBySecond(connectionId));
-#if MIRROR_40_0_OR_NEWER
+
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), channelId);
-#else
-                clientToServerTransport.ClientSend(channelId, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
         }
 
@@ -242,14 +193,16 @@ namespace LightReflectiveMirror
 
             int pos = 0;
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.CreateRoom);
+
             _clientSendBuffer.WriteInt(ref pos, maxServerPlayers);
             _clientSendBuffer.WriteString(ref pos, serverName);
             _clientSendBuffer.WriteBool(ref pos, isPublicServer);
             _clientSendBuffer.WriteString(ref pos, extraServerData);
-            // If we have direct connect module, and our local IP isnt null, tell server. Only time local IP is null is on cellular networks, such as IOS and Android.
-            _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null ? GetLocalIp() != null ? true : false : false);
 
-            if (_directConnectModule != null && GetLocalIp() != null)
+            // If we have direct connect module, and our local IP isnt null, tell server. Only time local IP is null is on cellular networks, such as IOS and Android.
+            _clientSendBuffer.WriteBool(ref pos, _directConnectModule != null ? GetLocalIp() != null : false);
+
+            if (_directConnectModule != null && GetLocalIp() != null && useNATPunch)
             {
                 _clientSendBuffer.WriteString(ref pos, GetLocalIp());
                 // Transport port will be NAT port + 1 for the proxy connections.
@@ -268,11 +221,8 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteBool(ref pos, false);
                 _clientSendBuffer.WriteInt(ref pos, _directConnectModule == null ? 1 : _directConnectModule.SupportsNATPunch() ? _directConnectModule.GetTransportPort() : 1);
             }
-#if MIRROR_40_0_OR_NEWER
+
             clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-            clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
         }
 
         public override void ServerStop()
@@ -283,11 +233,7 @@ namespace LightReflectiveMirror
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.LeaveRoom);
 
-#if MIRROR_40_0_OR_NEWER
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
 
                 if (_directConnectModule != null)
                     _directConnectModule.StopServer();

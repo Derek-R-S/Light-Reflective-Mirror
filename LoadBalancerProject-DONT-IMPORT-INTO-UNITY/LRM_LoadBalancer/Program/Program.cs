@@ -23,6 +23,8 @@ namespace LightReflectiveMirror.LoadBalancing
         const string API_PATH = "/api/stats";
         readonly string CONFIG_PATH = System.Environment.GetEnvironmentVariable("LRM_LB_CONFIG_PATH") ?? "config.json";
 
+        private Random _cachedRandom = new();
+
         public static Config conf;
         public static Program instance;
 

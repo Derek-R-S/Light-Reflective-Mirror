@@ -127,14 +127,9 @@ namespace LightReflectiveMirror
                 int pos = 0;
                 _clientSendBuffer.WriteByte(ref pos, 200);
 
-#if MIRROR_40_0_OR_NEWER
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
 
                 // If NAT Puncher is initialized, send heartbeat on that as well.
-
                 try
                 {
                     if (_NATPuncher != null)
@@ -348,11 +343,7 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteBool(ref pos, false);
                 _clientSendBuffer.WriteBool(ref pos, false);
 
-#if MIRROR_40_0_OR_NEWER
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
         }
 
@@ -368,11 +359,8 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteString(ref pos, newServerData);
                 _clientSendBuffer.WriteBool(ref pos, false);
                 _clientSendBuffer.WriteBool(ref pos, false);
-#if MIRROR_40_0_OR_NEWER
+
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
         }
 
@@ -389,11 +377,7 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteBool(ref pos, isPublic);
                 _clientSendBuffer.WriteBool(ref pos, false);
 
-#if MIRROR_40_0_OR_NEWER
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
         }
 
@@ -410,11 +394,7 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteBool(ref pos, true);
                 _clientSendBuffer.WriteInt(ref pos, maxPlayers);
 
-#if MIRROR_40_0_OR_NEWER
                 clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-                clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
             }
         }
 
@@ -435,11 +415,7 @@ namespace LightReflectiveMirror
             _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.AuthenticationResponse);
             _clientSendBuffer.WriteString(ref pos, authenticationKey);
 
-#if MIRROR_40_0_OR_NEWER
             clientToServerTransport.ClientSend(new ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
-#else
-            clientToServerTransport.ClientSend(0, new ArraySegment<byte>(_clientSendBuffer, 0, pos));
-#endif
         }
 
         public enum OpCodes

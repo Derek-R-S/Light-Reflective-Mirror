@@ -98,7 +98,7 @@ namespace LightReflectiveMirror
                         {
                             sendJoinPos = 0;
                             sendJoinBuffer.WriteByte(ref sendJoinPos, (byte)OpCodes.DirectConnectIP);
-                            Console.WriteLine(Program.instance.NATConnections[clientId].Address.ToString());
+
                             sendJoinBuffer.WriteString(ref sendJoinPos, Program.instance.NATConnections[clientId].Address.ToString());
                             sendJoinBuffer.WriteInt(ref sendJoinPos, Program.instance.NATConnections[clientId].Port);
                             sendJoinBuffer.WriteBool(ref sendJoinPos, true);

@@ -9,7 +9,7 @@ namespace LightReflectiveMirror
         // constructor for new relay handler
         public RelayHandler(int maxPacketSize)
         {
-            this._maxPacketSize = maxPacketSize;
+            _maxPacketSize = maxPacketSize;
             _sendBuffers = ArrayPool<byte>.Create(maxPacketSize, 50);
         }
 
@@ -22,14 +22,13 @@ namespace LightReflectiveMirror
 
         private string GenerateRoomID()
         {
-            const int LENGTH = 5;
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var randomID = "";
             var random = _cachedRandom;
 
             do
             {
-                randomID = new string(Enumerable.Repeat(chars, LENGTH)
+                randomID = new string(Enumerable.Repeat(chars, Program.conf.RandomlyGeneratedIDLength)
                                                         .Select(s => s[random.Next(s.Length)]).ToArray());
             }
             while (DoesServerIdExist(randomID));
@@ -74,7 +73,7 @@ namespace LightReflectiveMirror
                 {
                     if (room.clients.Contains(sendTo))
                     {
-                        SendData(clientData, channel, sendTo);
+                        SendData(clientData, channel, sendTo, clientId);
                     }
                 }
                 else
@@ -84,11 +83,22 @@ namespace LightReflectiveMirror
             }
         }
 
-        private void SendData(byte[] clientData, int channel, int sendTo)
+        private void SendData(byte[] clientData, int channel, int sendTo, int senderId)
         {
-            int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent(_maxPacketSize);
+            // 1 byte for opcode
+            var headerLength = 1;
+            var payloadLength = headerLength + clientData.Length;
 
+            if (payloadLength > _maxPacketSize)
+            {
+                Program.transport.ServerDisconnect(senderId);
+                Program.WriteLogMessage($"Client {senderId} tried to send more than max packet size! Disconnecting...");
+                return;
+            }
+
+            int pos = 0;
+            byte[] sendBuffer = _sendBuffers.Rent(payloadLength);
+   
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetData);
             sendBuffer.WriteBytes(ref pos, clientData);
 
@@ -96,15 +106,26 @@ namespace LightReflectiveMirror
             _sendBuffers.Return(sendBuffer);
         }
 
-        private void SendDataToRoomHost(int clientId, byte[] clientData, int channel, Room room)
+        private void SendDataToRoomHost(int senderId, byte[] clientData, int channel, Room room)
         {
+            // 1 byte - opcode, 4 bytes for sizeof(int) client id
+            var headerLength = 5;
+            var payloadLength = headerLength + clientData.Length;
+
+            if(payloadLength > _maxPacketSize)
+            {
+                Program.transport.ServerDisconnect(senderId);
+                Program.WriteLogMessage($"Client {senderId} tried to send more than max packet size! Disconnecting...");
+                return;
+            }
+            
             // We are not the host, so send the data to the host.
-            int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent(_maxPacketSize);
+            int pos = 0; 
+            byte[] sendBuffer = _sendBuffers.Rent(payloadLength);
 
             sendBuffer.WriteByte(ref pos, (byte)OpCodes.GetData);
             sendBuffer.WriteBytes(ref pos, clientData);
-            sendBuffer.WriteInt(ref pos, clientId);
+            sendBuffer.WriteInt(ref pos, senderId);
 
             Program.transport.ServerSend(room.hostId, channel, new ArraySegment<byte>(sendBuffer, 0, pos));
             _sendBuffers.Return(sendBuffer);

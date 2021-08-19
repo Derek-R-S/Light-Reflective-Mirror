@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace LightReflectiveMirror
@@ -9,12 +11,15 @@ namespace LightReflectiveMirror
         //========================
         // Required Settings
         //========================
-        public string TransportDLL = "MultiCompiled.dll";
         public string TransportClass = "kcp2k.KcpTransport";
         public string AuthenticationKey = "Secret Auth Key";
         public ushort TransportPort = 7777;
         public int UpdateLoopTime = 10;
         public int UpdateHeartbeatInterval = 100;
+ 
+        // this wont be used if you are using load balancer
+        // load balancer will generate instead.
+        public int RandomlyGeneratedIDLength = 5;
 
         //========================
         // Endpoint REST API Settings
@@ -37,5 +42,10 @@ namespace LightReflectiveMirror
         public string LoadBalancerAddress = "127.0.0.1";
         public ushort LoadBalancerPort = 7070;
         public LRMRegions LoadBalancerRegion = LRMRegions.NorthAmerica;
+
+        public static string GetTransportDLL()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "MultiCompiled_WIN.dll" : "MultiCompiled_LINUX.dll";
+        }
     }
 }

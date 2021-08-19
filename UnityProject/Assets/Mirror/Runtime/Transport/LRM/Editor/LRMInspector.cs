@@ -23,8 +23,12 @@ namespace LightReflectiveMirror
         LRMDirectConnectModule directModule;
         string[] tabs = new string[] { "LRM Settings", "NAT Punch", "Load Balancer", "Other" };
         int currentTab = 0;
-        Type[] supportedTransports = new Type[3] { typeof(KcpTransport), typeof(SimpleWebTransport), typeof(TelepathyTransport) };
 
+#if !IGNORANCE
+        Type[] supportedTransports = new Type[3] { typeof(KcpTransport), typeof(SimpleWebTransport), typeof(TelepathyTransport) };
+#else
+        Type[] supportedTransports = new Type[4] { typeof(KcpTransport), typeof(SimpleWebTransport), typeof(TelepathyTransport), typeof(IgnoranceTransport.Ignorance) };
+#endif
         public override void OnInspectorGUI()
         {
             var lrm = (LightReflectiveMirrorTransport)target;
@@ -217,8 +221,6 @@ namespace LightReflectiveMirror
                     case 0:
                         using (var change = new EditorGUI.ChangeCheckScope())
                         {
-
-
                             // They are in the LRM Settings tab.
                             if (lrm.useLoadBalancer)
                             {
@@ -308,4 +310,4 @@ namespace LightReflectiveMirror
         }
     }
 #endif
-}
+    }

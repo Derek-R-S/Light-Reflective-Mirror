@@ -28,14 +28,13 @@ namespace LightReflectiveMirror.LoadBalancing
 
         public string GenerateServerID()
         {
-            const int LENGTH = 5;
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var randomID = "";
+            var random = _cachedRandom;
 
             do
             {
-                var random = new System.Random();
-                randomID = new string(Enumerable.Repeat(chars, LENGTH)
+                randomID = new string(Enumerable.Repeat(chars, conf.RandomlyGeneratedIDLength)
                                                         .Select(s => s[random.Next(s.Length)]).ToArray());
             }
             while (cachedRooms.ContainsKey(randomID));

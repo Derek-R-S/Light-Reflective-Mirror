@@ -41,7 +41,7 @@ namespace LightReflectiveMirror
                 WriteLogMessage("Loading Assembly... ", ConsoleColor.White, true);
                 try
                 {
-                    var asm = Assembly.LoadFile(Path.GetFullPath(conf.TransportDLL));
+                    var asm = Assembly.LoadFile(Path.GetFullPath(Config.GetTransportDLL()));
                     WriteLogMessage($"OK", ConsoleColor.Green);
 
                     WriteLogMessage("\nLoading Transport Class... ", ConsoleColor.White, true);

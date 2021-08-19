@@ -65,39 +65,72 @@ public class LRMDirectConnectModule : MonoBehaviour
 
     public void SetTransportPort(int port)
     {
+#if !IGNORANCE
         if (directConnectTransport is kcp2k.KcpTransport kcpTransport)
             kcpTransport.Port = (ushort)port;
         else
         {
-            throw new Exception("DIRECT CONNECT MODULE ONLY SUPPORTS KCP AT THE MOMENT.");
+            ThrowIfNotSupported();
         }
+#else
+        if (directConnectTransport is kcp2k.KcpTransport kcpTransport)
+            kcpTransport.Port = (ushort)port;
+        if (directConnectTransport is IgnoranceTransport.Ignorance ignorance)
+            ignorance.port = (ushort)port;
+        else
+        {
+            ThrowIfNotSupported();
+        }
+#endif
     }
 
     public int GetTransportPort()
     {
+#if !IGNORANCE
         if (directConnectTransport is kcp2k.KcpTransport kcpTransport)
             return kcpTransport.Port;
         else
         {
-            throw new Exception("DIRECT CONNECT MODULE ONLY SUPPORTS KCP AT THE MOMENT.");
+            ThrowIfNotSupported();
+            return -1;
         }
+#else
+        if (directConnectTransport is kcp2k.KcpTransport kcpTransport)
+            return kcpTransport.Port;
+        if (directConnectTransport is IgnoranceTransport.Ignorance ignorance)
+            return ignorance.port;
+        else
+        {
+            ThrowIfNotSupported();
+            return -1;
+        }
+#endif
+    }
+
+    private static int ThrowIfNotSupported()
+    {
+#if !IGNORANCE
+        throw new Exception("DIRECT CONNECT MODULE ONLY SUPPORTS KCP AT THE MOMENT.");
+#else
+        throw new Exception("DIRECT CONNECT MODULE ONLY SUPPORTS KCP AND IGNORANCE");
+#endif
     }
 
     public bool SupportsNATPunch()
     {
+#if !IGNORANCE
         return directConnectTransport is kcp2k.KcpTransport;
+#else
+        return directConnectTransport is kcp2k.KcpTransport || directConnectTransport is IgnoranceTransport.Ignorance;
+#endif
     }
 
-    public bool KickClient(int clientID)
+    public void KickClient(int clientID)
     {
         if (showDebugLogs)
             Debug.Log("Kicked direct connect client.");
-#if MIRROR_37_0_OR_NEWER
+
         directConnectTransport.ServerDisconnect(clientID);
-        return true;
-#else
-        return directConnectTransport.ServerDisconnect(clientID);
-#endif
     }
 
     public void ClientDisconnect()
@@ -107,20 +140,12 @@ public class LRMDirectConnectModule : MonoBehaviour
 
     public void ServerSend(int clientID, ArraySegment<byte> data, int channel)
     {
-#if MIRROR_40_0_OR_NEWER
         directConnectTransport.ServerSend(clientID, data, channel);
-#else
-        directConnectTransport.ServerSend(clientID, channel, data);
-#endif
     }
 
     public void ClientSend(ArraySegment<byte> data, int channel)
     {
-#if MIRROR_40_0_OR_NEWER
         directConnectTransport.ClientSend(data, channel);
-#else
-        directConnectTransport.ClientSend(channel, data);
-#endif
     }
 
 #region Transport Callbacks
