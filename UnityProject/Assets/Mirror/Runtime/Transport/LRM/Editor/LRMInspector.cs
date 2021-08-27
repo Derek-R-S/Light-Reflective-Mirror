@@ -181,9 +181,16 @@ namespace LightReflectiveMirror
 
                 foreach (var transport in supportedTransports)
                 {
-                    if (lrm.useNATPunch && transport != typeof(KcpTransport))
+#if !IGNORANCE
+                    if (lrm.useNATPunch && (transport != typeof(KcpTransport)))
                         continue;
+#else
+                    bool isSupported = transport == typeof(KcpTransport) ||
+                                       transport == typeof(IgnoranceTransport.Ignorance);
 
+                    if (lrm.useNATPunch && !isSupported)
+                        continue;
+#endif
                     if (GUILayout.Button(transport.Name))
                     {
                         var newTransportGO = new GameObject("LRM - Direct Connect");
@@ -257,9 +264,18 @@ namespace LightReflectiveMirror
                         }
                         else
                         {
+#if !IGNORANCE
                             if (!(directModule.directConnectTransport is KcpTransport))
                             {
                                 EditorGUILayout.HelpBox("NAT Punch only supports KCP currently.", MessageType.Info);
+#else
+                            bool isSupported = (directModule.directConnectTransport is KcpTransport) ||
+                                               (directModule.directConnectTransport is IgnoranceTransport.Ignorance);
+
+                            if (!isSupported)
+                            {
+                                EditorGUILayout.HelpBox("NAT Punch only supports KCP and Ignorance currently.", MessageType.Info);
+#endif
                                 GUI.enabled = false;
                                 lrm.useNATPunch = false;
                             }

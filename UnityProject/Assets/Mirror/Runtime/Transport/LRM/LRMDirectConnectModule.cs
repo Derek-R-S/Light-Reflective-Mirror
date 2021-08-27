@@ -75,7 +75,7 @@ public class LRMDirectConnectModule : MonoBehaviour
 #else
         if (directConnectTransport is kcp2k.KcpTransport kcpTransport)
             kcpTransport.Port = (ushort)port;
-        if (directConnectTransport is IgnoranceTransport.Ignorance ignorance)
+        else if (directConnectTransport is IgnoranceTransport.Ignorance ignorance)
             ignorance.port = (ushort)port;
         else
         {
@@ -97,7 +97,7 @@ public class LRMDirectConnectModule : MonoBehaviour
 #else
         if (directConnectTransport is kcp2k.KcpTransport kcpTransport)
             return kcpTransport.Port;
-        if (directConnectTransport is IgnoranceTransport.Ignorance ignorance)
+        else if (directConnectTransport is IgnoranceTransport.Ignorance ignorance)
             return ignorance.port;
         else
         {
