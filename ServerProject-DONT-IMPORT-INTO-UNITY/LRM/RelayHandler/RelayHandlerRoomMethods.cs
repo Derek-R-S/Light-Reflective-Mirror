@@ -13,11 +13,11 @@ namespace LightReflectiveMirror
         /// <param name="clientId">The client requesting to create a room</param>
         /// <param name="maxPlayers">The maximum amount of players for this room</param>
         /// <param name="serverName">The name for the server</param>
-        /// <param name="isPublic">Weather or not the server should show up on the server list</param>
+        /// <param name="isPublic">Whether or not the server should show up on the server list</param>
         /// <param name="serverData">Extra data the host can include</param>
-        /// <param name="useDirectConnect">Weather or not, the host is capable of doing direct connections</param>
+        /// <param name="useDirectConnect">Whether or not, the host is capable of doing direct connections</param>
         /// <param name="hostLocalIP">The hosts local IP</param>
-        /// <param name="useNatPunch">Weather or not, the host is supporting NAT Punch</param>
+        /// <param name="useNatPunch">Whether or not, the host is supporting NAT Punch</param>
         /// <param name="port">The port of the direct connect transport on the host</param>
         private void CreateRoom(int clientId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port)
         {
