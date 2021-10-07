@@ -31,11 +31,10 @@ namespace LightReflectiveMirror.LoadBalancing
         {
             var randomID = "";
             var random = _cachedRandom;
-            var length = Program.conf.RandomlyGeneratedIDLength;
 
             do
             {
-                randomID = new string(Enumerable.Repeat(chars, length)
+                randomID = new string(Enumerable.Repeat(chars, conf.RandomlyGeneratedIDLength)
                     .Select(s => s[random.Next(s.Length)])
                     .ToArray());
             }
