@@ -35,7 +35,9 @@ namespace LightReflectiveMirror.LoadBalancing
 
             do
             {
-                randomID = new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
+                randomID = new string(Enumerable.Repeat(chars, length)
+                    .Select(s => s[random.Next(s.Length)])
+                    .ToArray());
             }
             while (cachedRooms.ContainsKey(randomID));
 
