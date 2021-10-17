@@ -32,6 +32,11 @@ namespace LightReflectiveMirror.LoadBalancing
             var randomID = "";
             var random = _cachedRandom;
 
+            if (conf.RandomlyGeneratedIDNumerical)
+            {
+                chars = "0123456789";
+            }
+
             do
             {
                 randomID = new string(Enumerable.Repeat(chars, conf.RandomlyGeneratedIDLength)

@@ -22,6 +22,11 @@ namespace LightReflectiveMirror
         
         private string GenerateRoomID(string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         {
+            if (Program.conf.RandomlyGeneratedIDNumerical)
+            {
+                chars = "0123456789";
+            }
+            
             var randomID = "";
             var random = _cachedRandom;
             var length = Program.conf.RandomlyGeneratedIDLength;
