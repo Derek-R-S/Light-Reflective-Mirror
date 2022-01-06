@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine AS builder
-WORKDIR /ServerProject-DONT-IMPORT-INTO-UNITY/lrm
+WORKDIR /ServerProject-DONT-IMPORT-INTO-UNITY
 COPY . .
 ARG BUILD_MODE="Release"
 RUN dotnet publish \
