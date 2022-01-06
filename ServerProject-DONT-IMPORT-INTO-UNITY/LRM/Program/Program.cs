@@ -25,7 +25,7 @@ namespace LightReflectiveMirror
 
             GetPublicIP();
 
-            bool noConfig = bool.TryParse(Environment.GetEnvironmentVariable("NO_CONFIG") ?? "false", out noConfig) ? false : noConfig;
+            bool noConfig = bool.Parse(Environment.GetEnvironmentVariable("NO_CONFIG") ?? "false");
 
             if (!File.Exists(CONFIG_PATH) && !noConfig)
             {
