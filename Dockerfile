@@ -1,15 +1,11 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine AS builder
-WORKDIR /ServerProject-DONT-IMPORT-INTO-UNITY
-COPY . .
-ARG BUILD_MODE="Release"
-RUN dotnet publish \
-    --output /build/ \
-    --configuration $BUILD_MODE \
-    --no-self-contained .
-
-FROM mcr.microsoft.com/dotnet/runtime:5.0-alpine
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
 WORKDIR /lrm
-COPY --from=builder /build/ .
+COPY . .
+RUN dotnet publish --runtime ubuntu.20.04-x64 -c Release -o out
+
+FROM mcr.microsoft.com/dotnet/aspnet:5.0
+WORKDIR /lrm
+COPY --from=build-env /app/out .
 
 ENV NO_CONFIG="true"
 ENV TRANSPORT_CLASS="kcp2k.KcpTransport"
@@ -40,5 +36,4 @@ EXPOSE 7777/udp
 EXPOSE 7776/udp
 EXPOSE 8080
 
-CMD [ "./LRM" ]
 ENTRYPOINT [ "./LRM" ]
