@@ -45,7 +45,7 @@ namespace LightReflectiveMirror
 
         public static string GetTransportDLL()
         {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "MultiCompiled_WIN.dll" : "MultiCompiled_LINUX.dll";
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "MultiCompiled.dll" : "MultiCompiled.dll";
         }
     }
 }
