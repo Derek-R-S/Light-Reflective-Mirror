@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
 WORKDIR /lrm
-COPY ./ServerProject-DONT-IMPORT-INTO-UNITY/* ./
+COPY ./ServerProject-DONT-IMPORT-INTO-UNITY ./
 RUN dotnet publish LRM.sln --runtime ubuntu.20.04-x64 -c Release -o out --no-self-contained
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0
