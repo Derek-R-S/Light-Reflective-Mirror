@@ -1,11 +1,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
 WORKDIR /lrm
 COPY ./ServerProject-DONT-IMPORT-INTO-UNITY ./
-RUN dotnet publish LRM.sln --runtime ubuntu.20.04-x64 -c Release -o out
+RUN dotnet publish LRM.sln --runtime ubuntu.20.04-x64 -c Release -o /out/
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0
 WORKDIR /lrm
-COPY --from=build-env /out .
+COPY --from=build-env /out/ .
 
 ENV NO_CONFIG="true"
 ENV TRANSPORT_CLASS="kcp2k.KcpTransport"
