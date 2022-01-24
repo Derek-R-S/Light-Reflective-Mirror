@@ -19,17 +19,17 @@ namespace LightReflectiveMirror
         /// <param name="id">The ID to check for</param>
         /// <returns></returns>
         private bool DoesServerIdExist(string id) => _cachedRooms.ContainsKey(id);
-
-        private string GenerateRoomID()
+        
+        private string GenerateRoomID(string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            chars = Program.conf.RandomlyGeneratedIDNumerical ? "0123456789" : chars;
             var randomID = "";
             var random = _cachedRandom;
+            var length = Program.conf.RandomlyGeneratedIDLength;
 
             do
             {
-                randomID = new string(Enumerable.Repeat(chars, Program.conf.RandomlyGeneratedIDLength)
-                                                        .Select(s => s[random.Next(s.Length)]).ToArray());
+                randomID = new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
             }
             while (DoesServerIdExist(randomID));
 

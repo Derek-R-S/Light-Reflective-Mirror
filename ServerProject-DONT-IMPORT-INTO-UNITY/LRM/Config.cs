@@ -20,6 +20,7 @@ namespace LightReflectiveMirror
         // this wont be used if you are using load balancer
         // load balancer will generate instead.
         public int RandomlyGeneratedIDLength = 5;
+        public bool RandomlyGeneratedIDNumerical = false;
 
         //========================
         // Endpoint REST API Settings

@@ -13,5 +13,6 @@ namespace LightReflectiveMirror.LoadBalancing
         public ushort EndpointPort = 7070;
         public bool ShowDebugLogs = false;
         public int RandomlyGeneratedIDLength = 5;
+        public bool RandomlyGeneratedIDNumerical = false;
     }
 }

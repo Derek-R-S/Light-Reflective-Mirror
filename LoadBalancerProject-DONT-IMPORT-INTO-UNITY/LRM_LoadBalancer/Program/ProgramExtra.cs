@@ -25,17 +25,19 @@ namespace LightReflectiveMirror.LoadBalancing
 
             return temp;
         }
-
-        public string GenerateServerID()
+        
+        
+        public string GenerateServerID(string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            chars = conf.RandomlyGeneratedIDNumerical ? "0123456789" : chars;
             var randomID = "";
             var random = _cachedRandom;
 
             do
             {
                 randomID = new string(Enumerable.Repeat(chars, conf.RandomlyGeneratedIDLength)
-                                                        .Select(s => s[random.Next(s.Length)]).ToArray());
+                    .Select(s => s[random.Next(s.Length)])
+                    .ToArray());
             }
             while (cachedRooms.ContainsKey(randomID));
 
